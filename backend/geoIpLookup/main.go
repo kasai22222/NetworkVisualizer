@@ -2,6 +2,7 @@ package geoIpLookup
 
 import (
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/oschwald/geoip2-golang"
@@ -9,28 +10,30 @@ import (
 
 const databaseFilePath string = "./GeoLite2-City.mmdb"
 
-type coordinates struct {
+type Coordinates struct {
 	Latitude  float64
 	Longitude float64
 }
 
-type GeoIP struct {
+type GeoIp struct {
 	db *geoip2.Reader
 }
 
-func handleGeoIpError(msg string, err error) error {
-	if err != nil {
-		return fmt.Errorf("%s: %w", msg, err)
-	}
-	return nil
-}
+var geoIpInstance *GeoIp
 
-func NewGeoIp() (*GeoIP, error) {
+func init() {
 	db, err := geoip2.Open(databaseFilePath)
 	if err != nil {
-		handleGeoIpError("failed to open database", err)
+		log.Fatalf("failed to open GeoIp database: %v", err)
 	}
-	return &GeoIP{db: db}, nil
+	geoIpInstance = &GeoIp{db: db}
+}
+
+func handleGeoIpError(err error) error {
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	return nil
 }
 
 func parseIp(ip string) (net.IP, error) {
@@ -42,37 +45,31 @@ func parseIp(ip string) (net.IP, error) {
 
 }
 
-func (g *GeoIP) GetCity(ip string) (*geoip2.City, error) {
+func GetCity(ip string) (*geoip2.City, error) {
 	parsedIp, err := parseIp(ip)
 	if err != nil {
-		return nil, err
+		return nil, handleGeoIpError(err)
 	}
 
-	record, err := g.db.City(parsedIp)
+	record, err := geoIpInstance.db.City(parsedIp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get city info: %w", err)
+		return nil, handleGeoIpError(err)
 	}
 
 	return record, nil
 }
 
-func (g *GeoIP) Close() {
-	if g.db != nil {
-		g.db.Close()
-	}
-}
-
-func (g *GeoIP) GetCoordinates(ip string) (coordinates, error) {
+func GetCoordinates(ip string) (Coordinates, error) {
 	parsedIp, err := parseIp(ip)
 	if err != nil {
-		return coordinates{}, err
+		return Coordinates{}, err
 	}
-	record, err := g.db.City(parsedIp)
+	record, err := geoIpInstance.db.City(parsedIp)
 	if err != nil {
-		return coordinates{}, err
+		return Coordinates{}, err
 	}
 
-	return coordinates{Latitude: record.Location.Latitude, Longitude: record.Location.Longitude}, nil
+	return Coordinates{Latitude: record.Location.Latitude, Longitude: record.Location.Longitude}, nil
 }
 
 // func geoIpLookup(ip string, queryFunc func(*geoip2.Reader, net.IP) (interface{}, error)) (interface{}, error) {
@@ -93,5 +90,10 @@ func (g *GeoIP) GetCoordinates(ip string) (coordinates, error) {
 // 		return nil, err
 // 	}
 
-// 	return result, nil
-// }
+//		return result, nil
+//	}
+func (g *GeoIp) Close() {
+	if geoIpInstance.db != nil {
+		geoIpInstance.db.Close()
+	}
+}
