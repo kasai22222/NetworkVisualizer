@@ -2,11 +2,12 @@ package types
 
 import (
 	"backend/geoIpLookup"
-
-	"github.com/oschwald/geoip2-golang"
+	"net"
 )
 
 type AlertData struct {
 	Coords geoIpLookup.Coordinates
-	City   geoip2.City
+	SrcIp  net.IP
+	DstIp  net.IP
+	// City   geoip2.City
 }

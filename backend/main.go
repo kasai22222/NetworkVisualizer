@@ -5,7 +5,9 @@ import (
 	jsonhelper "backend/jsonHelper"
 	"backend/types"
 	"backend/websocket"
+	"fmt"
 	"log"
+	"net"
 	"time"
 )
 
@@ -13,11 +15,18 @@ import (
 
 func parseData(data jsonhelper.Alert) (types.AlertData, error) {
 	var parsedData types.AlertData
-	test, err := geoIpLookup.GetCity(data.Src_addr)
+	// test, err := geoIpLookup.GetCity(data.Src_addr)
+	// if err != nil {
+	// 	return types.AlertData{}, err
+	// }
+	// parsedData.City = *test
+	parsedData.SrcIp = net.ParseIP(data.Src_addr)
+	parsedData.DstIp = net.ParseIP(data.Dst_addr)
+	coords, err := geoIpLookup.GetCoordinates(data.Src_addr)
 	if err != nil {
-		return types.AlertData{}, err
+		log.Fatal("Failed to get coords", err)
 	}
-	parsedData.City = *test
+	parsedData.Coords = coords
 	return parsedData, nil
 }
 
@@ -43,26 +52,28 @@ func main() {
 
 	var parsedData []types.AlertData
 	for _, value := range alerts {
+		// var coords []geoIpLookup.Coordinates
 		__, err := parseData(value)
 		if err != nil {
 			log.Fatal("Failed to parse data")
 		}
 		parsedData = append(parsedData, __)
-		// val, err := geoIpLookup.GetCoordinates(value.Src_addr)
-		// if err != nil {
-		// 	log.Fatalf("Could not get coords for ip %s: %s", value.Src_addr, err)
-		// }
-		// 	// coords = append(coords, val)
-		go websocket.RunWebsocketServer()
-
-		go func() {
-			i := 0
-			for {
-				websocket.SendMessage(parsedData[i%len(parsedData)])
-				i++
-				time.Sleep(3 * time.Second)
-			}
-		}()
-		select {}
 	}
+	fmt.Println(parsedData)
+	// val, err := geoIpLookup.GetCoordinates(value.Src_addr)
+	// if err != nil {
+	// 	log.Fatalf("Could not get coords for ip %s: %s", value.Src_addr, err)
+	// }
+	// 	// coords = append(coords, val)
+	go websocket.RunWebsocketServer()
+
+	go func() {
+		i := 0
+		for {
+			websocket.SendMessage(parsedData[i%len(parsedData)])
+			i++
+			time.Sleep(3 * time.Second)
+		}
+	}()
+	select {}
 }
