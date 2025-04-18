@@ -7,97 +7,141 @@
 //     maxZoom: 20,
 //   }
 
-import React, { useEffect, useRef } from "react";
-import maplibregl from "maplibre-gl";
-import { MapboxOverlay } from "@deck.gl/mapbox";
-import { ScatterplotLayer } from "@deck.gl/layers";
-import "maplibre-gl/dist/maplibre-gl.css";
+import React, { useEffect, useState } from 'react';
+import DeckGL from '@deck.gl/react';
+import { ArcLayer, LineLayer } from '@deck.gl/layers';
+import { ZoomWidget } from '@deck.gl/react';
+import { Map } from 'react-map-gl/maplibre';
+import { FirstPersonView, MapView } from 'deck.gl';
+import { connectWebsocket, disconnectWebSocket, getMessageQueue } from "../utils/websocket.js";
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 
-const MyMap = () => {
-  const mapRef = useRef(null);
-
-  useEffect(() => {
-    const map = new maplibregl.Map({
-      container: mapRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
-      center: [0, 20],
-      zoom: 2,
-      pitch: 30,
-      antialias: true,
-    });
-
-    map.addControl(new maplibregl.NavigationControl(), "top-right");
-
-    const overlay = new MapboxOverlay({
-      interleaved: true,
-      layers: [
-        new ScatterplotLayer({
-          id: "scatter-layer",
-          data: [
-            {
-              position: [-0.09, 51.505],
-              size: 100,
-              color: [255, 0, 0],
-              name: "London",
-            },
-            {
-              position: [-74.006, 40.7128],
-              size: 100,
-              color: [0, 255, 0],
-              name: "NYC",
-            },
-            {
-              position: [139.6503, 35.6762],
-              size: 100,
-              color: [0, 0, 255],
-              name: "Tokyo",
-            },
-          ],
-          getPosition: (d) => d.position,
-          getFillColor: (d) => d.color,
-          getRadius: (d) => d.size,
-          pickable: true,
-          onHover: ({ object, x, y }) => {
-            const tooltip = document.getElementById("tooltip");
-            if (object) {
-              tooltip.style.display = "block";
-              tooltip.style.left = `${x}px`;
-              tooltip.style.top = `${y}px`;
-              tooltip.innerHTML = object.name;
-            } else {
-              tooltip.style.display = "none";
-            }
-          },
-        }),
-      ],
-    });
-
-    map.addControl(overlay);
-
-    return () => {
-      map.remove();
-    };
-  }, []);
-
-  return (
-    <>
-      <div ref={mapRef} style={{ width: "100%", height: "100vh" }} />
-      <div
-        id="tooltip"
-        style={{
-          position: "absolute",
-          zIndex: 999,
-          background: "white",
-          padding: "4px 8px",
-          borderRadius: "4px",
-          display: "none",
-          pointerEvents: "none",
-          fontSize: "12px",
-          boxShadow: "0 1px 5px rgba(0,0,0,0.3)",
-        }}
-      />
-    </>
-  );
+const INITIAL_VIEW_STATE = {
+  longitude: 30,
+  latitude: 37.7853,
+  zoom: 1.8,
+  pitch: 60,
 };
 
-export default MyMap;
+
+
+
+export const MyMap = () => {
+  const [messageHistory, setMessageHistory] = useState([]);
+  const [parsedData, setParsedData] = useState([]);
+  const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:8080/ws")
+  const { lastMessage, readyState } = useWebSocket(websocketUrl)
+
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: 'Connecting',
+    [ReadyState.OPEN]: 'Open',
+    [ReadyState.CLOSING]: 'Closing',
+    [ReadyState.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+  }[readyState];
+
+
+  const [time, setTime] = useState(Date.now());
+
+  // Update the time to animate the arcs
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(Date.now());
+    }, 50); // Update every 50ms for smoother animation
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
+  useEffect(() => {
+    if (lastMessage !== null) {
+      if (lastMessage.data == "finish") {
+        setParsedData([])
+        return
+      }
+      let data = JSON.parse(lastMessage.data)
+      let flattenedData = [];
+      for (const ruleKey in data) {
+        const ruleInfo = data[ruleKey]
+        const msg = ruleInfo.Message
+        for (const srcIp in ruleInfo.Stats) {
+          const stats = ruleInfo.Stats[srcIp]
+          flattenedData.push({
+            Alert: stats.Alert,
+            Count: stats.Count,
+            Rule: ruleKey,
+            Message: msg
+          })
+        }
+      }
+      setParsedData(() => flattenedData);
+      setMessageHistory((prev) => prev.concat(lastMessage));
+
+      // console.log(parsedData)
+    }
+  }, [lastMessage]);
+  useEffect(() => {
+    console.log(parsedData)
+  }, [parsedData])
+  // return (
+  //   <div>
+  //     <span>The WebSocket is currently {connectionStatus}</span>
+  //     {lastMessage ? <span>Last message: {lastMessage.data}</span> : null}
+  //     <ul>
+  //       {messageHistory.map((message, idx) => (
+  //         <span key={idx}>{message ? message.data : null}</span>
+  //       ))}
+  //     </ul>
+  //   </div>
+  // )
+  function colourFromPriority(priority, max = 10) {
+    const inverted = Math.max(0, Math.min(priority - 1, max - 1)) / (max - 1); // normalize 0–1
+    const gb = Math.floor(255 * inverted); // lower priority = redder (less green/blue)
+    return [255, gb, gb]; // red channel always max
+  }
+
+  const layer = new ArcLayer({
+    id: "ArcLayer",
+    data: parsedData,
+    getSourcePosition: (d) => d.Alert.SrcCoords,
+    getTargetPosition: (d) => d.Alert.DstCoords,
+    getHeight: (d) => d.Alert.Priority * 0.3,
+    getSourceColor: (d) => colourFromPriority(d.Alert.Priority),
+    getTargetColor: (d) => colourFromPriority(d.Alert.Priority),
+    // getTilt: (d) => d.Count * 0.8,
+    // getSourcePosition: [-122.27, -37.80],
+    // getTargetPosition: [125.8, 40.2],
+    getWidth: 1,
+    // greatCircle: true,
+    pickable: true
+  })
+  return (
+    <DeckGL
+      initialViewState={INITIAL_VIEW_STATE}
+      controller
+      getTooltip={({ object }) => {
+        if (!object) return null;
+        const { Alert, Count, Message } = object;
+        return `${Alert.SrcIp} →  ${Alert.DstIp}\nCount: ${Count}\nPriority: ${Alert.Priority}\n${Message}`
+      }}
+      layers={layer}
+    >
+
+      <MapView id="map" width="100%" controller >
+        <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
+      </MapView>
+
+
+    </DeckGL >
+  );
+
+
+
+  // return (
+  //   <Map initialViewState={{
+  //     longitude: -122.4, latitude: 37.8,
+  //     zoom: 14
+  //   }}
+  //     style={{ height: "100%", width: "100%" }}
+  //     mapStyle="https://api.maptiler.com/maps/dataviz/style.json?key=hrp9I8G7p3Wn0lc5wH9U" />
+  //
+  // );
+}

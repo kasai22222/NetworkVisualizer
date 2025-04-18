@@ -1,6 +1,7 @@
 package geoIpLookup
 
 import (
+	"backend/types"
 	"fmt"
 	"log"
 	"net"
@@ -9,11 +10,6 @@ import (
 )
 
 const databaseFilePath string = "./GeoLite2-City.mmdb"
-
-type Coordinates struct {
-	Latitude  float64
-	Longitude float64
-}
 
 type GeoIp struct {
 	db *geoip2.Reader
@@ -59,17 +55,13 @@ func GetCity(ip string) (*geoip2.City, error) {
 	return record, nil
 }
 
-func GetCoordinates(ip string) (Coordinates, error) {
-	parsedIp, err := parseIp(ip)
+func GetCoordinates(ip net.IP) (types.Coordinates, error) {
+	record, err := geoIpInstance.db.City(ip)
 	if err != nil {
-		return Coordinates{}, err
-	}
-	record, err := geoIpInstance.db.City(parsedIp)
-	if err != nil {
-		return Coordinates{}, err
+		return types.Coordinates{}, err
 	}
 
-	return Coordinates{Latitude: record.Location.Latitude, Longitude: record.Location.Longitude}, nil
+	return []float64{record.Location.Longitude, record.Location.Latitude}, nil
 }
 
 // func geoIpLookup(ip string, queryFunc func(*geoip2.Reader, net.IP) (interface{}, error)) (interface{}, error) {
