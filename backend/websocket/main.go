@@ -34,7 +34,7 @@ var (
 // 	go handleConnection(conn)
 // }
 
-func handleConnection(w http.ResponseWriter, r *http.Request, parsedData map[string]*types.RuleInfo) {
+func handleConnection(w http.ResponseWriter, r *http.Request, processedData map[string]*types.RuleInfo) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("websocket upgrade error: %v", err)
@@ -52,8 +52,8 @@ func handleConnection(w http.ResponseWriter, r *http.Request, parsedData map[str
 			clientsMutex.Unlock()
 			conn.Close()
 		}()
-		SendMessage(parsedData)
-		// for _, srcMap := range parsedData {
+		sendMessage(conn, processedData)
+		// for _, srcMap := range processedData {
 		// 	for _, data := range srcMap {
 		// 		SendMessage(data.Alert)
 		// 	}
@@ -86,43 +86,54 @@ func handleConnection(w http.ResponseWriter, r *http.Request, parsedData map[str
 // 	}
 // 	fmt.Printf(string(message))
 
-func SendFinish() {
-	clientsMutex.Lock()
-	defer clientsMutex.Unlock()
+// func SendFinish() {
+// 	clientsMutex.Lock()
+// 	defer clientsMutex.Unlock()
+//
+// 	for conn := range clients {
+// 		err := conn.WriteMessage(websocket.TextMessage, []byte("finish"))
+// 		if err != nil {
+// 			log.Fatal("Error sending finish ", err)
+// 			conn.Close()
+// 			delete(clients, conn)
+// 		}
+// 	}
+// }
 
+func SendMessageToClients(message map[string]*types.RuleInfo) {
 	for conn := range clients {
-		err := conn.WriteMessage(websocket.TextMessage, []byte("finish"))
-		if err != nil {
-			log.Fatal("Error sending finish ", err)
-			conn.Close()
-			delete(clients, conn)
-		}
+		sendMessage(conn, message)
 	}
 }
 
-func SendMessage(message map[string]*types.RuleInfo) {
-	msg, err := json.Marshal(message)
+func sendMessage(conn *websocket.Conn, message map[string]*types.RuleInfo) {
+	// msg, err := json.Marshal(message)
+	// if err != nil {
+	// 	log.Print("Error on marshall: ", err)
+	// }
+	clientsMutex.Lock()
+	defer clientsMutex.Unlock()
+	err := conn.WriteJSON(message)
 	if err != nil {
-		log.Printf("Error on marshall: ", err)
+		log.Print("Error writing to client: ", err)
+		conn.Close()
+		delete(clients, conn)
 	}
-	clientsMutex.Lock()
-	defer clientsMutex.Unlock()
-
-	for conn := range clients {
-		err := conn.WriteMessage(websocket.TextMessage, msg)
-		if err != nil {
-			log.Printf("Error writing to client", err)
-			conn.Close()
-			delete(clients, conn)
-		}
-	}
+	// for conn := range clients {
+	// 	err := conn.WriteJSON(message)
+	// 	if err != nil {
+	// 		log.Print("Error writing to client", err)
+	// 		conn.Close()
+	// 		delete(clients, conn)
+	// 	}
+	// }
 }
 
-func RunWebsocketServer(parsedData map[string]*types.RuleInfo) error {
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { handleConnection(w, r, parsedData) })
+func RunWebsocketServer(processedData map[string]*types.RuleInfo) error {
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { handleConnection(w, r, processedData) })
 	http.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(parsedData)
+		err := json.NewEncoder(w).Encode(processedData)
 		if err != nil {
 			http.Error(w, "Unable to encode json", http.StatusInternalServerError)
 			return

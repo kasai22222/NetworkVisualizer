@@ -28,9 +28,10 @@ const INITIAL_VIEW_STATE = {
 
 export const MyMap = () => {
   const [messageHistory, setMessageHistory] = useState([]);
-  const [parsedData, setParsedData] = useState([]);
-  const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:8080/ws")
+  const [processedData, setProcessedData] = useState([]);
+  const [websocketUrl, setWebsocketUrl] = useState("ws://192.168.0.11:3000/ws")
   const { lastMessage, readyState } = useWebSocket(websocketUrl)
+  const [currentShownData, setCurrentShownData] = useState("")
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -54,7 +55,7 @@ export const MyMap = () => {
   useEffect(() => {
     if (lastMessage !== null) {
       if (lastMessage.data == "finish") {
-        setParsedData([])
+        setProcessedData([])
         return
       }
       let data = JSON.parse(lastMessage.data)
@@ -72,15 +73,15 @@ export const MyMap = () => {
           })
         }
       }
-      setParsedData(() => flattenedData);
+      setProcessedData((prev) => prev.concat(flattenedData));
       setMessageHistory((prev) => prev.concat(lastMessage));
 
-      // console.log(parsedData)
+      // console.log(processedData)
     }
   }, [lastMessage]);
   useEffect(() => {
-    console.log(parsedData)
-  }, [parsedData])
+    console.log(processedData)
+  }, [processedData])
   // return (
   //   <div>
   //     <span>The WebSocket is currently {connectionStatus}</span>
@@ -100,7 +101,7 @@ export const MyMap = () => {
 
   const layer = new ArcLayer({
     id: "ArcLayer",
-    data: parsedData,
+    data: processedData,
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => d.Alert.DstCoords,
     getHeight: (d) => d.Alert.Priority * 0.3,
@@ -111,26 +112,37 @@ export const MyMap = () => {
     // getTargetPosition: [125.8, 40.2],
     getWidth: 1,
     // greatCircle: true,
-    pickable: true
+    pickable: true,
+    onClick: (info) => setCurrentShownData(info.object.Alert),
+    onHover: (info) => {
+      console.log("INFO: ", info)
+      console.log("OBJECT: ", info.object)
+      setCurrentShownData(info.object.Alert)
+    }
   })
   return (
-    <DeckGL
-      initialViewState={INITIAL_VIEW_STATE}
-      controller
-      getTooltip={({ object }) => {
-        if (!object) return null;
-        const { Alert, Count, Message } = object;
-        return `${Alert.SrcIp} →  ${Alert.DstIp}\nCount: ${Count}\nPriority: ${Alert.Priority}\n${Message}`
-      }}
-      layers={layer}
-    >
+    <>
+      <div className='z-50 absolute bg-white p-7'>
+        {currentShownData.SrcCoords}
+      </div>
+      <DeckGL
+        initialViewState={INITIAL_VIEW_STATE}
+        controller
+        getTooltip={({ object }) => {
+          if (!object) return null;
+          const { Alert, Count, Message } = object;
+          return `${Alert.SrcIp} →  ${Alert.DstIp}\nCount: ${Count}\nPriority: ${Alert.Priority}\n${Message}`
+        }}
+        layers={layer}
+      >
 
-      <MapView id="map" width="100%" controller >
-        <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
-      </MapView>
+        <MapView id="map" width="100%" controller >
+          <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
+        </MapView>
 
 
-    </DeckGL >
+      </DeckGL >
+    </>
   );
 
 
