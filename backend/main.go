@@ -4,7 +4,6 @@ import (
 	dataparsing "backend/dataParsing"
 	"backend/types"
 	"backend/websocket"
-	"fmt"
 	"log"
 	"sync"
 )
@@ -28,7 +27,7 @@ func main() {
 	dataparsing.ProcessData("alert_json.txt", processedData)
 	dataMutex.Unlock()
 
-	go websocket.RunWebsocketServer(processedData)
+	go websocket.RunWebsocketServer(processedData, &dataMutex)
 	go func() {
 		for event := range fileChangeEvents {
 			dataMutex.Lock()
@@ -37,14 +36,6 @@ func main() {
 				log.Fatal("Error processing data: ", err)
 			}
 			dataMutex.Unlock()
-			fmt.Println("New data count: ", len(currentProcessedData))
-			// currCount := 0
-			// for _, ruleInfo := range processedData {
-			// 	// fmt.Println(ruleInfo.Message)
-			// 	for _, ruleStats := range ruleInfo.Stats {
-			// 		currCount = currCount + ruleStats.Count
-			// 	}
-			// }
 			websocket.SendMessageToClients(currentProcessedData)
 		}
 	}()

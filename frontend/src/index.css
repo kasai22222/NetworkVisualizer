@@ -5,3 +5,7 @@ html, body, #root {
   padding: 0;
   height: 100%;
 }
+
+:root {
+  --toastify-color-progress-dark: #fff;
+}

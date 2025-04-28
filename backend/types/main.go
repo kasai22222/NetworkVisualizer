@@ -10,7 +10,7 @@ type FileChannel struct {
 }
 
 type RawAlert struct {
-	Timestamp string
+	Timestamp int `json:"seconds"`
 	Pkg_num   int
 	Proto     string
 	Pkg_gen   string
@@ -53,7 +53,7 @@ type ParsedAlert struct {
 	DstIp     net.IP
 	DstCoords Coordinates
 	Priority  int
-	Timestamp string
+	Timestamp int
 	// City   geoip2.City
 }
 

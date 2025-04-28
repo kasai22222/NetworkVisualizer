@@ -1,11 +1,27 @@
 // import { GPTMap } from "./Components/GPTMap";
+import { Bounce, ToastContainer } from "react-toastify";
 import { MyMap } from "./Components/Map";
-import { WebSocketDemo } from "./Components/TestWebsocket";
+
+
+
 
 function App() {
   return (
     <>
-      <MyMap></MyMap>
+      <ToastContainer
+        position="top-right"
+        autoClose={1100}
+        limit={2}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        draggable
+        pauseOnFocusLoss={false}
+        pauseOnHover={false}
+        theme="dark"
+        transition={Bounce}
+      />
+      <MyMap />
       {/* <GPTMap></GPTMap> */}
       {/* <WebSocketDemo></WebSocketDemo> */}
     </>

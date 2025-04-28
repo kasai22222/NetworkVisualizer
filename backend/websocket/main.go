@@ -34,7 +34,7 @@ var (
 // 	go handleConnection(conn)
 // }
 
-func handleConnection(w http.ResponseWriter, r *http.Request, processedData map[string]*types.RuleInfo) {
+func handleConnection(w http.ResponseWriter, r *http.Request, processedData map[string]*types.RuleInfo, dataMutex *sync.Mutex) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("websocket upgrade error: %v", err)
@@ -52,7 +52,9 @@ func handleConnection(w http.ResponseWriter, r *http.Request, processedData map[
 			clientsMutex.Unlock()
 			conn.Close()
 		}()
+		dataMutex.Lock()
 		sendMessage(conn, processedData)
+		dataMutex.Unlock()
 		// for _, srcMap := range processedData {
 		// 	for _, data := range srcMap {
 		// 		SendMessage(data.Alert)
@@ -101,6 +103,8 @@ func handleConnection(w http.ResponseWriter, r *http.Request, processedData map[
 // }
 
 func SendMessageToClients(message map[string]*types.RuleInfo) {
+	clientsMutex.Lock()
+	defer clientsMutex.Unlock()
 	for conn := range clients {
 		sendMessage(conn, message)
 	}
@@ -111,13 +115,14 @@ func sendMessage(conn *websocket.Conn, message map[string]*types.RuleInfo) {
 	// if err != nil {
 	// 	log.Print("Error on marshall: ", err)
 	// }
-	clientsMutex.Lock()
-	defer clientsMutex.Unlock()
 	err := conn.WriteJSON(message)
 	if err != nil {
 		log.Print("Error writing to client: ", err)
 		conn.Close()
+
+		clientsMutex.Lock()
 		delete(clients, conn)
+		clientsMutex.Unlock()
 	}
 	// for conn := range clients {
 	// 	err := conn.WriteJSON(message)
@@ -129,8 +134,8 @@ func sendMessage(conn *websocket.Conn, message map[string]*types.RuleInfo) {
 	// }
 }
 
-func RunWebsocketServer(processedData map[string]*types.RuleInfo) error {
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { handleConnection(w, r, processedData) })
+func RunWebsocketServer(processedData map[string]*types.RuleInfo, dataMutex *sync.Mutex) error {
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { handleConnection(w, r, processedData, dataMutex) })
 	http.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		err := json.NewEncoder(w).Encode(processedData)
@@ -139,6 +144,6 @@ func RunWebsocketServer(processedData map[string]*types.RuleInfo) error {
 			return
 		}
 	})
-	fmt.Println("Websocket started on :8080")
-	return http.ListenAndServe(":8080", nil)
+	fmt.Println("Websocket started on :3000")
+	return http.ListenAndServe(":3000", nil)
 }

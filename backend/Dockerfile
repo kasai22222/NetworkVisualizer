@@ -9,8 +9,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o backend
+RUN go build -o backend ./
 
-EXPOSE 8080
+EXPOSE 3000
 
-CMD ["/build/backend"]
+CMD [ "/build/backend" ]
