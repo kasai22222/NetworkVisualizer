@@ -2,6 +2,7 @@ package main
 
 import (
 	dataparsing "backend/dataParsing"
+	"backend/debugging"
 	"backend/types"
 	"backend/websocket"
 	"log"
@@ -26,20 +27,21 @@ func main() {
 	dataMutex.Lock()
 	dataparsing.ProcessData("alert_json.txt", processedData)
 	dataMutex.Unlock()
-
+	debugging.CountCount("After Initial data processing", processedData)
 	go websocket.RunWebsocketServer(processedData, &dataMutex)
-	go func() {
-		for event := range fileChangeEvents {
-			dataMutex.Lock()
-			currentProcessedData, err := dataparsing.ProcessData(event.Path, processedData)
-			if err != nil {
-				log.Fatal("Error processing data: ", err)
-			}
-			dataMutex.Unlock()
-			websocket.SendMessageToClients(currentProcessedData)
+	// go func() {
+	for event := range fileChangeEvents {
+		dataMutex.Lock()
+		currentProcessedData, err := dataparsing.ProcessData(event.Path, processedData)
+		if err != nil {
+			log.Fatal("Error processing data: ", err)
 		}
-	}()
-	select {}
+		dataMutex.Unlock()
+		debugging.CountCount("Before sending to clients", processedData)
+		websocket.SendMessageToClients(currentProcessedData)
+	}
+	// }()
+	// select {}
 }
 
 //	func getData(path string) {

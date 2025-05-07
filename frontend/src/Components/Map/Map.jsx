@@ -1,22 +1,20 @@
-// var CartoDB_DarkMatterNoLabels = L.tileLayer(
-//   "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
-//   {
-//     attribution:
-//       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-//     subdomains: "abcd",
-//     maxZoom: 20,
-//   }
+/*
+ * TODO: Things to do in this file
+ * Sort out data not showing up on refresh (The frontend has all the data but for some reason does not load the data between initial connect to backend and after refresh (I think??))
+ */
 
 import React, { useEffect, useState } from 'react';
 import DeckGL from '@deck.gl/react';
-import { ArcLayer, LineLayer } from '@deck.gl/layers';
-import { ZoomWidget } from '@deck.gl/react';
+import { ArcLayer } from '@deck.gl/layers';
 import { Map } from 'react-map-gl/maplibre';
-import { FirstPersonView, MapView } from 'deck.gl';
-import { connectWebsocket, disconnectWebSocket, getMessageQueue } from "../utils/websocket.js";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { Clipboard } from 'lucide-react';
-import { toast } from 'react-toastify';
+import whyDidYouRender from '@welldone-software/why-did-you-render';
+import { MapInfoBox } from './MapInfoBox';
+
+// console.log(import.meta.env.DEV)
+
+
+
 
 const INITIAL_VIEW_STATE = {
   longitude: 30,
@@ -26,32 +24,9 @@ const INITIAL_VIEW_STATE = {
 };
 
 
-const filterItems = (processedData, { priority, message, startDate, endDate }) => {
-  // debugger;
-  console.log("processedData Count: ", processedData.length)
-  console.log(`Priority: ${priority}\nmessage: ${message}`)
-  let items =
-    processedData.filter((item) => {
-      // if (i < 10) {
-      //   console.log(`TIMESTAMP: ${item.Alert.Timestamp}\nDATE: ${new Date(item.Alert.Timestamp)}`)
-      // }
-      const messageMatch = message == null || item.Message.toLowerCase().includes(message.toLowerCase())
-      const priorityMatch =
-        priority == null ||
-        (item.Alert.Priority >= 1 &&
-          item.Alert.Priority <= 10 &&
-          item.Alert.Priority === priority);
 
-      // let timestamp = item.Alert.Timestamp
-      // const timestampMatch = (startDate == null && endDate == null) ||
-      //   (startDate < timestamp && timestamp < endDate)
 
-      return messageMatch && priorityMatch
-    })
 
-  return items
-
-}
 
 export const MyMap = () => {
   const [messageHistory, setMessageHistory] = useState([]);
@@ -60,22 +35,15 @@ export const MyMap = () => {
   // const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:8080/ws")
   const { lastMessage, readyState } = useWebSocket(websocketUrl)
   const [currentShownData, setCurrentShownData] = useState("")
-  const [filteredItems, setFilteredItems] = useState(processedData)
-  const [itemFilters, setItemFilters] = useState({
-    priority: null,
-    message: null,
-    startDate: null,
-    endDate: null
-  })
 
-
-  const connectionStatus = {
-    [ReadyState.CONNECTING]: 'Connecting',
-    [ReadyState.OPEN]: 'Open',
-    [ReadyState.CLOSING]: 'Closing',
-    [ReadyState.CLOSED]: 'Closed',
-    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-  }[readyState];
+  //
+  // const connectionStatus = {
+  //   [ReadyState.CONNECTING]: 'Connecting',
+  //   [ReadyState.OPEN]: 'Open',
+  //   [ReadyState.CLOSING]: 'Closing',
+  //   [ReadyState.CLOSED]: 'Closed',
+  //   [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+  // }[readyState];
 
 
   // useEffect(() => {
@@ -96,7 +64,7 @@ export const MyMap = () => {
   // const [time, setTime] = useState(Date.now());
 
   // Update the time to animate the arcs
-  // useEffect(() => {
+  // useEffect(() => , processedData{
   //   const interval = setInterval(() => {
   //     setTime(Date.now());
   //   }, 50); // Update every 50ms for smoother animation
@@ -104,25 +72,18 @@ export const MyMap = () => {
   // return () => clearInterval(interval); // Cleanup on unmount
   // }, []);
 
-  // const [hasData, setHasData] = useState(false)
-  const [count, setCount] = useState(0)
   useEffect(() => {
     if (lastMessage !== null && lastMessage.data.length >= 1) {
-      if (lastMessage.data == "finish") {
-        setProcessedData([])
-        return
-      }
-      // if (hasData) {
-      //   return
-      // }
       let data = JSON.parse(lastMessage.data)
       let flattenedData = [];
+
+      // FIXME: Need to merge all the alerts from one srcIp into one alert as it's rendering too many lines.
+      // Maybe just use the data as is when it comes from the backend?
       for (const ruleKey in data) {
         const ruleInfo = data[ruleKey]
         const msg = ruleInfo.Message
         for (const srcIp in ruleInfo.Stats) {
           const stats = ruleInfo.Stats[srcIp]
-          setCount((prev) => prev + stats.Count)
           flattenedData.push({
             Alert: stats.Alert,
             Count: stats.Count,
@@ -132,9 +93,14 @@ export const MyMap = () => {
         }
       }
       let items = flattenedData.filter((d) => d.Alert.SrcCoords[0] != 0 && d.Alert.DstCoords[0] != 0)
+      // TESTING:
+      items = items.slice(flattenedData.length - 1000, flattenedData.length - 1)
+      // let items = flattenedData
       // if (items.length > 1) {
       //   setHasData(true)
       // }
+      // console.log("COUNT: ", count)
+      // console.log("OLD ITEMS COUNT: ", processedData.length)
       setProcessedData((prev) => prev.concat(items))
       setMessageHistory((prev) => prev.concat(lastMessage))
 
@@ -143,13 +109,19 @@ export const MyMap = () => {
   }, [lastMessage]);
 
   useEffect(() => {
-    console.log("COUNT: ", count)
-  })
+    let count = 0
+    // console.log(typeof processedData)
+    // console.log(processedData)
+    processedData.forEach((x) => {
+      count = count + x.Count
+    })
+    // for (var x in processedData) {
+    //   console.log(x)
+    // }
+    // console.log("NEW ITEMS COUNT: ", count)
+  }, [processedData])
 
 
-  useEffect(() => {
-    setFilteredItems(filterItems(processedData, itemFilters))
-  }, [processedData, itemFilters])
   // return (
   //   <div>
   //     <span>The WebSocket is currently {connectionStatus}</span>
@@ -215,70 +187,6 @@ export const MyMap = () => {
 
 
 
-  const InfoBox = ({ alerts }) => {
-    const prettifyDate = (unixTime) => {
-      let date = new Date(unixTime * 1000)
-      let minutes
-      if (date.getMinutes().toString().length == 1) {
-        minutes = "0" + date.getMinutes()
-      } else {
-        minutes = date.getMinutes()
-      }
-      let month = date.getMonth() + 1 //NOTE:  date.getMonth return index based date :/
-
-      return `${date.getFullYear()}/${month}/${date.getDate()} - ${date.getHours()}:${minutes}`
-    }
-
-
-    const checkScroll = (event) => {
-
-      console.log(event.currentTarget.scrollTop)
-    }
-
-
-
-    const [itemIsHovered, setItemIsHovered] = useState(null)
-    return (
-      <div className='grid grid-cols-2 absolute h-66 bottom-0 bg-red-500 w-screen'>
-
-
-
-        <div className='bg-gray-400 border-2 rounded-2xl w-full h-full'>
-          <div className=''>
-            <div className='p-4 z-[1000] bg-blue-400' onClick={() => {
-              setItemFilters({
-                priority: 2,
-                message: "ICMP"
-              })
-              setFilteredItems(filterItems(processedData, itemFilters))
-            }}></div>
-          </div>
-        </div>
-
-
-
-        <div className='bg-slate-400 overflow-auto flex flex-col p-2 w-full h-full' onScroll={(event) => checkScroll(event)}>
-          {alerts.map((item, i) => {
-            return (
-              <div key={i} className='flex items-center bg-slate-400 brightness-100 hover:cursor-pointer hover:brightness-105 border-2 border-t-0 first:border-t-2 justify-between w-full'>
-                <p onMouseLeave={() => setItemIsHovered(null)} onMouseEnter={() => setItemIsHovered(i)} onClick={(event) => {
-                  toast("Copied to Clipboard")
-                  navigator.clipboard.writeText(event.target.textContent)
-                }} className='grow' >{prettifyDate(item.Alert.Timestamp)} {item.Message}</p>
-                {itemIsHovered === i && (
-                  <div className='flex-shrink-0'>
-                    <Clipboard />
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-
-      </div >
-    )
-  }
 
 
 
@@ -310,9 +218,7 @@ export const MyMap = () => {
       {/*   { console.log(alert.Rule) } */}
       {/*   return <p>Alert: {alert.Rule.toString()}</p> */}
       {/* })} */}
-      <InfoBox alerts={processedData.sort((a, b) => {
-        return new Date(b.Alert.Timestamp) - new Date(a.Alert.Timestamp)
-      })}></InfoBox>
+      <MapInfoBox processedData={processedData}></MapInfoBox>
     </>
   );
 

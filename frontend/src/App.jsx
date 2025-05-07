@@ -1,11 +1,10 @@
 // import { GPTMap } from "./Components/GPTMap";
 import { Bounce, ToastContainer } from "react-toastify";
-import { MyMap } from "./Components/Map";
 
-
-
+import { MyMap } from "./Components/Map/Map";
 
 function App() {
+
   return (
     <>
       <ToastContainer

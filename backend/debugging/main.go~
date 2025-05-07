@@ -12,5 +12,5 @@ func CountCount(step string, data map[string]*types.RuleInfo) {
 			count = count + val2.Count
 		}
 	}
-	fmt.Printf("COUNT AT STEP %s : %d\n\n", step, count)
+	fmt.Printf("COUNT AT STEP %s : %d", step, count)
 }
