@@ -3,18 +3,15 @@
  * Sort out data not showing up on refresh (The frontend has all the data but for some reason does not load the data between initial connect to backend and after refresh (I think??))
  */
 
-import React, { useEffect, useState } from 'react';
-import DeckGL from '@deck.gl/react';
-import { ArcLayer } from '@deck.gl/layers';
-import { Map } from 'react-map-gl/maplibre';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
-import whyDidYouRender from '@welldone-software/why-did-you-render';
-import { MapInfoBox } from './MapInfoBox';
+import React, { useEffect, useState } from "react";
+import DeckGL from "@deck.gl/react";
+import { ArcLayer } from "@deck.gl/layers";
+import { Map } from "react-map-gl/maplibre";
+import useWebSocket, { ReadyState } from "react-use-websocket";
+import whyDidYouRender from "@welldone-software/why-did-you-render";
+import { MapInfoBox } from "./MapInfoBox";
 
 // console.log(import.meta.env.DEV)
-
-
-
 
 const INITIAL_VIEW_STATE = {
   longitude: 30,
@@ -23,18 +20,34 @@ const INITIAL_VIEW_STATE = {
   pitch: 60,
 };
 
-
-
-
-
+const AlertInfoBox = ({ data }) => {
+  if (data == null) {
+    return;
+  }
+  return (
+    // FIXME: Make it look good with word wrapping and max width (max-w-[x] doesn't work)
+    <div className="fixed left-0 top-0 bg-gray-600 z-50 p-2 rounded-2xl wrap-anywhere">
+      <p>Priority: {data.Alert.Priority}</p>
+      <p>Message: {data.Message}</p>
+      <p>Source IP: {data.Alert.SrcIp}</p>
+      <p>Destination IP: {data.Alert.DstIp}</p>
+    </div>
+  );
+};
 
 export const MyMap = () => {
   const [messageHistory, setMessageHistory] = useState([]);
   const [processedData, setProcessedData] = useState([]);
-  const [websocketUrl, setWebsocketUrl] = useState("ws://192.168.0.11:3000/ws")
+  const [websocketUrl, setWebsocketUrl] = useState("ws://192.168.0.11:3000/ws");
   // const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:8080/ws")
-  const { lastMessage, readyState } = useWebSocket(websocketUrl)
-  const [currentShownData, setCurrentShownData] = useState("")
+  const { lastMessage, readyState } = useWebSocket(websocketUrl);
+  const [currentShownData, setCurrentShownData] = useState("");
+  const [currentDisplayedData, setCurrentDisplayedData] = useState(null);
+  const [filteredItems, setFilteredItems] = useState(
+    processedData.sort((a, b) => {
+      return b.Alert.Timestamp - a.Alert.Timestamp;
+    })
+  );
 
   //
   // const connectionStatus = {
@@ -44,7 +57,6 @@ export const MyMap = () => {
   //   [ReadyState.CLOSED]: 'Closed',
   //   [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   // }[readyState];
-
 
   // useEffect(() => {
   //
@@ -60,7 +72,6 @@ export const MyMap = () => {
   //   }
   // }
 
-
   // const [time, setTime] = useState(Date.now());
 
   // Update the time to animate the arcs
@@ -74,53 +85,57 @@ export const MyMap = () => {
 
   useEffect(() => {
     if (lastMessage !== null && lastMessage.data.length >= 1) {
-      let data = JSON.parse(lastMessage.data)
+      let data = JSON.parse(lastMessage.data);
       let flattenedData = [];
 
       // FIXME: Need to merge all the alerts from one srcIp into one alert as it's rendering too many lines.
       // Maybe just use the data as is when it comes from the backend?
       for (const ruleKey in data) {
-        const ruleInfo = data[ruleKey]
-        const msg = ruleInfo.Message
+        const ruleInfo = data[ruleKey];
+        const msg = ruleInfo.Message;
         for (const srcIp in ruleInfo.Stats) {
-          const stats = ruleInfo.Stats[srcIp]
+          const stats = ruleInfo.Stats[srcIp];
           flattenedData.push({
             Alert: stats.Alert,
             Count: stats.Count,
             Rule: ruleKey,
-            Message: msg
-          })
+            Message: msg,
+          });
         }
       }
-      let items = flattenedData.filter((d) => d.Alert.SrcCoords[0] != 0 && d.Alert.DstCoords[0] != 0)
+      let items = flattenedData.filter(
+        (d) => d.Alert.SrcCoords[0] != 0 && d.Alert.DstCoords[0] != 0
+      );
       // TESTING:
-      items = items.slice(flattenedData.length - 1000, flattenedData.length - 1)
+      items = items.slice(
+        flattenedData.length - 1000,
+        flattenedData.length - 1
+      );
       // let items = flattenedData
       // if (items.length > 1) {
       //   setHasData(true)
       // }
       // console.log("COUNT: ", count)
       // console.log("OLD ITEMS COUNT: ", processedData.length)
-      setProcessedData((prev) => prev.concat(items))
-      setMessageHistory((prev) => prev.concat(lastMessage))
+      setProcessedData((prev) => prev.concat(items));
+      setMessageHistory((prev) => prev.concat(lastMessage));
 
       // console.log(processedData)
     }
   }, [lastMessage]);
 
   useEffect(() => {
-    let count = 0
+    let count = 0;
     // console.log(typeof processedData)
     // console.log(processedData)
     processedData.forEach((x) => {
-      count = count + x.Count
-    })
+      count = count + x.Count;
+    });
     // for (var x in processedData) {
     //   console.log(x)
     // }
     // console.log("NEW ITEMS COUNT: ", count)
-  }, [processedData])
-
+  }, [processedData]);
 
   // return (
   //   <div>
@@ -139,90 +154,71 @@ export const MyMap = () => {
     return [255, gb, gb]; // red channel always max
   }
 
-
   // useEffect(() => {
   //   console.log("Filtered: ", filteredItems)
   // }, [filteredItems])
 
-
-
-
-
-
-
-
   const layer = new ArcLayer({
     id: "ArcLayer",
-    data: processedData,
+    data: filteredItems,
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => d.Alert.DstCoords,
     getHeight: () => 0.6,
     getSourceColor: (d) => colourFromPriority(d.Alert.Priority),
     getTargetColor: (d) => colourFromPriority(d.Alert.Priority),
+    zIndex: 1,
     transitions: {
       getSourceColor: {
         duration: 2000,
-        enter: () => [255, 255, 255, 50]
+        enter: () => [255, 255, 255, 50],
       },
       getTargetColor: {
         duration: 2000,
-        enter: () => [255, 255, 255, 50]
-
-      }
+        enter: () => [255, 255, 255, 50],
+      },
     },
     // getTilt: (d) => d.Count * 0.8,
     // getSourcePosition: [-122.27, -37.80],
     // getTargetPosition: [125.8, 40.2],
     getWidth: 2,
     // greatCircle: true,
-    pickable: true,
-    onClick: (info) => setCurrentShownData(info.object.Alert),
-    //FIXME: Broken 
+    pickable: false,
+    //FIXME: Broken
     // onHover: (info) => {
     //   console.log("INFO: ", info)
     //   console.log("OBJECT: ", info.object)
     //   setCurrentShownData(info.object.Alert)
     // }
-  })
-
-
-
-
-
+  });
 
   return (
-    <>
-
+    <div>
+      <AlertInfoBox data={currentDisplayedData} />
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller
-        getTooltip={({ object }) => {
-          if (!object) return null;
-          const { Alert, Count, Message } = object;
-          return `${Alert.SrcIp} →  ${Alert.DstIp}\nCount: ${Count}\nPriority: ${Alert.Priority}\n${Message}`
-        }}
         layers={layer}
       >
-
         <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
         {/* <MapView id="map" width="100%" controller >
         //   <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
         // </MapView>
         */}
-
-
-      </DeckGL >
+      </DeckGL>
       {/* {console.log(lastTenAlerts)} */}
       {/* <p>{lastTenAlerts[0].Rule}</p> */}
       {/* {lastTenAlerts.map((alert) => { */}
       {/*   { console.log(alert.Rule) } */}
       {/*   return <p>Alert: {alert.Rule.toString()}</p> */}
       {/* })} */}
-      <MapInfoBox processedData={processedData}></MapInfoBox>
-    </>
+      <MapInfoBox
+        filteredItems={filteredItems}
+        setFilteredItems={setFilteredItems}
+        processedData={processedData}
+        setCurrentDisplayedData={setCurrentDisplayedData}
+      ></MapInfoBox>
+    </div>
   );
-
-
 
   // return (
   //   <Map initialViewState={{
@@ -233,4 +229,4 @@ export const MyMap = () => {
   //     mapStyle="https://api.maptiler.com/maps/dataviz/style.json?key=hrp9I8G7p3Wn0lc5wH9U" />
   //
   // );
-}
+};

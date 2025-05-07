@@ -1,6 +1,6 @@
 // import { GPTMap } from "./Components/GPTMap";
 import { Bounce, ToastContainer } from "react-toastify";
-
+import "./App.css"
 import { MyMap } from "./Components/Map/Map";
 
 function App() {
