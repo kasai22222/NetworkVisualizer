@@ -1,6 +1,7 @@
 import { Clipboard } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "react-toastify"
+import { ItemFilterer } from "./ItemFilterer/ItemFilterer"
 
 const filterItems = (processedData, itemFilters) => {
   const { priority, message, startDate, endDate } = itemFilters
@@ -34,59 +35,6 @@ const filterItems = (processedData, itemFilters) => {
   return items
 
 }
-
-
-const ItemFilterer = ({ setItemFilters }) => {
-  const localSetItemFilters = (e) => {
-    if (!e) { return }
-
-    let localItemFilters = {}
-    localItemFilters["priority"] = e.get("priority")
-    localItemFilters["message"] = e.get("message")
-    localItemFilters["startDate"] = e.get("startDate")
-    localItemFilters["endDate"] = e.get("endDate")
-    setItemFilters(localItemFilters)
-  }
-
-  const inputField = (name, type) => {
-    return (
-      <label className="input input-error"><input className="grow" placeholder={name} name={name} type={type} /></label>
-    )
-  }
-  return (
-    <form className="flex flex-col w-96" onSubmit={(e) => {
-      e.preventDefault();
-      let formData = new FormData(e.target);
-      localSetItemFilters(formData)
-    }}>
-      {inputField("priority", "number")}
-      {inputField("message", "text")}
-      {inputField("startDate", "date")}
-      {inputField("endDate", "date")}
-
-      <label className="input input-lg">
-        <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <g
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            strokeWidth="2.5"
-            fill="none"
-            stroke="currentColor"
-          >
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.3-4.3"></path>
-          </g>
-        </svg>
-        <input type="search" className="grow" placeholder="Search" />
-        <kbd className="kbd kbd-sm">⌘</kbd>
-        <kbd className="kbd kbd-sm">K</kbd>
-      </label>
-      <button type="submit" className="p-5 bg-blue-800">Submit here</button>
-    </form>
-  )
-}
-
-
 
 
 export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, setCurrentDisplayedData }) => {
@@ -130,37 +78,38 @@ export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, set
 
   const [itemIsHovered, setItemIsHovered] = useState(null)
   return (
-    <div className='grid grid-cols-2 bg-red-100 absolute h-66 bottom-0 w-screen'>
-      <div className='rounded-2xl w-full h-full'>
-        <ItemFilterer setItemFilters={setItemFilters} />
-      </div>
+    <>
+      <ItemFilterer setItemFilters={setItemFilters} />
+      <div className='grid grid-cols-2 bg-red-100 absolute h-66 bottom-0 w-screen'>
+        <div className='rounded-2xl bg-black w-full h-full'>
+
+        </div>
 
 
-      <div className='bg-slate-400 overflow-auto flex flex-col p-2 w-full h-full' onScroll={(event) => checkScroll(event)}>
-        {filteredItems.map((item, i) => {
-          return (
-            <div key={i} className='relative flex items-center bg-slate-400 brightness-100 hover:cursor-pointer hover:brightness-105 border-2 border-t-0 first:border-t-2 justify-between w-full'>
+        <div className='bg-slate-400 overflow-auto flex flex-col p-2 w-full h-full' onScroll={(event) => checkScroll(event)}>
+          {filteredItems.map((item, i) => {
+            return (
+              <div key={i} className='relative flex items-center bg-slate-400 brightness-100 hover:cursor-pointer hover:brightness-105 border-2 border-t-0 first:border-t-2 justify-between w-full'>
 
-              <p onMouseLeave={() => setItemIsHovered(null)} onMouseEnter={() => {
-                setItemIsHovered(i)
-                setCurrentDisplayedData(item)
-              }
-              }
-                onClick={(event) => {
-                  navigator.clipboard.writeText(event.target.textContent)
-                  toast("Copied to Clipboard")
-                }} className='grow' >{prettifyDate(item.Alert.Timestamp)} {item.Message}</p>
-              {itemIsHovered === i && (
-                <div className='flex-shrink-0'>
-                  <Clipboard />
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-
-    </div >
+                <p onMouseLeave={() => setItemIsHovered(null)} onMouseEnter={() => {
+                  setItemIsHovered(i)
+                  setCurrentDisplayedData(item)
+                }
+                }
+                  onClick={(event) => {
+                    navigator.clipboard.writeText(event.target.textContent)
+                    toast("Copied to Clipboard")
+                  }} className='grow' >{prettifyDate(item.Alert.Timestamp)} {item.Message}</p>
+                {itemIsHovered === i && (
+                  <div className='flex-shrink-0'>
+                    <Clipboard />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div >
+    </>
   )
 }
