@@ -26,7 +26,7 @@ func checkFileIsOk(filePath string) error {
 		return err
 	}
 	if initialStat.Size() != finalStat.Size() {
-
+		return fmt.Errorf("file size mismatch")
 	}
 	return nil
 }
@@ -58,7 +58,7 @@ func StartWatchingFiles(filesToWatch []string) (<-chan types.FileChannel, error)
 					// fmt.Print("HERERERER")
 					return
 				}
-				// fmt.Print("EVENT: ", event.Op)
+				fmt.Print("EVENT: ", event.Op)
 				if event.Op&(fsnotify.Write|fsnotify.Rename) != 0 {
 					pendingEvents[event.Name] = event
 					lastEventTime[event.Name] = time.Now()

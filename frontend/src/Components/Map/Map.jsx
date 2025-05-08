@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { ArcLayer } from "@deck.gl/layers";
-import { Map } from "react-map-gl/maplibre";
+import { Map as MapLibreMap } from "react-map-gl/maplibre"
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import whyDidYouRender from "@welldone-software/why-did-you-render";
 import { MapInfoBox } from "./MapInfoBox";
@@ -39,7 +39,7 @@ export const MyMap = () => {
   const [messageHistory, setMessageHistory] = useState([]);
   const [processedData, setProcessedData] = useState([]);
   const [websocketUrl, setWebsocketUrl] = useState("ws://192.168.0.11:3000/ws");
-  // const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:8080/ws")
+  // const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:3000/ws")
   const { lastMessage, readyState } = useWebSocket(websocketUrl);
   const [currentShownData, setCurrentShownData] = useState("");
   const [currentDisplayedData, setCurrentDisplayedData] = useState(null);
@@ -48,7 +48,7 @@ export const MyMap = () => {
       return b.Alert.Timestamp - a.Alert.Timestamp;
     })
   );
-
+  const [mapArcs, setMapArcs] = useState([])
   //
   // const connectionStatus = {
   //   [ReadyState.CONNECTING]: 'Connecting',
@@ -86,38 +86,71 @@ export const MyMap = () => {
   useEffect(() => {
     if (lastMessage !== null && lastMessage.data.length >= 1) {
       let data = JSON.parse(lastMessage.data);
-      let flattenedData = [];
 
       // FIXME: Need to merge all the alerts from one srcIp into one alert as it's rendering too many lines.
       // Maybe just use the data as is when it comes from the backend?
-      for (const ruleKey in data) {
-        const ruleInfo = data[ruleKey];
-        const msg = ruleInfo.Message;
-        for (const srcIp in ruleInfo.Stats) {
-          const stats = ruleInfo.Stats[srcIp];
-          flattenedData.push({
-            Alert: stats.Alert,
-            Count: stats.Count,
-            Rule: ruleKey,
-            Message: msg,
-          });
+      let flattenedData = [];
+      (async () => {
+        for (const ruleKey in data) {
+          const ruleInfo = data[ruleKey];
+          const msg = ruleInfo.Message;
+          for (const srcIp in ruleInfo.Stats) {
+            const stats = ruleInfo.Stats[srcIp];
+            flattenedData.push({
+              Alert: stats.Alert,
+              Count: stats.Count,
+              Rule: ruleKey,
+              Message: msg,
+            });
+          }
         }
-      }
-      let items = flattenedData.filter(
+      })()
+
+      let flattenedDataItems = flattenedData.filter(
         (d) => d.Alert.SrcCoords[0] != 0 && d.Alert.DstCoords[0] != 0
       );
-      // TESTING:
-      items = items.slice(
-        flattenedData.length - 1000,
-        flattenedData.length - 1
+
+      const arcs = new Map();
+
+      for (const rule of Object.values(data)) {
+        for (const stats of Object.values(rule.Stats)) {
+          const alert = stats.Alert;
+          const key = `${alert.SrcCoords.join(",")}->${alert.DstCoords.join(",")}`;
+
+          if (!arcs.has(key)) {
+            arcs.set(key, {
+              // srcCoords: alert.SrcCoords,
+              // dstCoords: alert.DstCoords,
+              // srcIp: alert.SrcIp,
+              // dstIp: alert.DstIp,
+              // priority: alert.Priority,
+              Alert: alert,
+              Message: rule.Message,
+              // count: stats.Count,
+              timestamp: alert.Timestamp,
+            });
+          }
+        }
+      }
+
+      let uniqueArcs = Array.from(arcs.values());
+      let items = uniqueArcs.filter(
+        (d) => d.Alert.SrcCoords[0] != 0 && d.Alert.DstCoords[0] != 0
       );
+
+      // TESTING:
+      // items = items.slice(
+      //   flattenedData.length - 1000,
+      //   flattenedData.length - 1
+      // );
       // let items = flattenedData
       // if (items.length > 1) {
       //   setHasData(true)
       // }
       // console.log("COUNT: ", count)
       // console.log("OLD ITEMS COUNT: ", processedData.length)
-      setProcessedData((prev) => prev.concat(items));
+      setProcessedData((prev) => prev.concat(flattenedDataItems));
+      setMapArcs((prev) => prev.concat(items))
       setMessageHistory((prev) => prev.concat(lastMessage));
 
       // console.log(processedData)
@@ -154,19 +187,15 @@ export const MyMap = () => {
     return [255, gb, gb]; // red channel always max
   }
 
-  // useEffect(() => {
-  //   console.log("Filtered: ", filteredItems)
-  // }, [filteredItems])
 
   const layer = new ArcLayer({
     id: "ArcLayer",
-    data: filteredItems,
+    data: mapArcs,
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => d.Alert.DstCoords,
     getHeight: () => 0.6,
     getSourceColor: (d) => colourFromPriority(d.Alert.Priority),
     getTargetColor: (d) => colourFromPriority(d.Alert.Priority),
-    zIndex: 1,
     transitions: {
       getSourceColor: {
         duration: 2000,
@@ -182,13 +211,14 @@ export const MyMap = () => {
     // getTargetPosition: [125.8, 40.2],
     getWidth: 2,
     // greatCircle: true,
-    pickable: false,
+    pickable: true,
     //FIXME: Broken
-    // onHover: (info) => {
-    //   console.log("INFO: ", info)
-    //   console.log("OBJECT: ", info.object)
-    //   setCurrentShownData(info.object.Alert)
-    // }
+    onHover: (info) => {
+      setCurrentDisplayedData(info.object)
+      //   console.log("INFO: ", info)
+      //   console.log("OBJECT: ", info.object)
+      //   setCurrentShownData(info.object.Alert)
+    }
   });
 
   return (
@@ -199,7 +229,7 @@ export const MyMap = () => {
         controller
         layers={layer}
       >
-        <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
+        <MapLibreMap mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
         {/* <MapView id="map" width="100%" controller >
         //   <Map mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
         // </MapView>

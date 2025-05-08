@@ -2,36 +2,41 @@ import { Clipboard } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 
-const filterItems = (processedData, { priority, message, startDate, endDate }, debugging, setDebugging) => {
-  if (debugging) {
-    debugger
-    console.log("PRIORITY FILTER: ", priority)
+const filterItems = (processedData, itemFilters) => {
+  const { priority, message, startDate, endDate } = itemFilters
+  if (priority == 0 && message == "" && startDate == null && endDate == null) {
+    return processedData
   }
-  let items = processedData.filter((item, i) => {
+  let items = processedData.filter((item) => {
 
-    // if (i < 10) {
-    //   oonsole.log(`TIMESTAMP: ${item.Alert.Timestamp}\nDATE: ${new Date(item.Alert.Timestamp)}`)
-    // }
-    const messageMatch = message == null || item.Message.toLowerCase().includes(message.toLowerCase())
+    const messageMatch = message == "" || item.Message.toLowerCase().includes(message.toLowerCase())
+
     const priorityMatch =
-      priority == null ||
-      (item.Alert.Priority >= 1 &&
+      (priority == null || priority == "") ||
+      (
+        item.Alert.Priority >= 1 &&
         item.Alert.Priority <= 10 &&
-        item.Alert.Priority === Number(priority));
+        item.Alert.Priority === Number(priority)
+      );
 
-    // let timestamp = item.Alert.Timestamp
-    // const timestampMatch = (startDate == null && endDate == null) ||
-    //   (startDate < timestamp && timestamp < endDate)
+    const timestamp = item.Alert.Timestamp
+    const startDateUnix = startDate ? Math.floor(new Date(startDate).getTime() / 1000) : null;
+    const endDateUnix = endDate ? Math.floor(new Date(endDate).getTime() / 1000) : null;
 
-    return messageMatch && priorityMatch
+    const timestampMatch = (startDateUnix == null && endDateUnix == null) ||
+      (startDateUnix < timestamp && timestamp < endDateUnix)
+
+
+
+    const matchesAll = messageMatch && priorityMatch && timestampMatch
+    return matchesAll
   })
-  setDebugging(false)
   return items
 
 }
 
 
-const ItemFilterer = ({ setItemFilters, setDebugging }) => {
+const ItemFilterer = ({ setItemFilters }) => {
   const localSetItemFilters = (e) => {
     if (!e) { return }
 
@@ -41,7 +46,6 @@ const ItemFilterer = ({ setItemFilters, setDebugging }) => {
     localItemFilters["startDate"] = e.get("startDate")
     localItemFilters["endDate"] = e.get("endDate")
     setItemFilters(localItemFilters)
-    setDebugging(true)
   }
 
   const inputField = (name, type) => {
@@ -87,17 +91,15 @@ const ItemFilterer = ({ setItemFilters, setDebugging }) => {
 
 export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, setCurrentDisplayedData }) => {
   const [itemFilters, setItemFilters] = useState({
-    priority: null,
-    message: null,
+    priority: 0,
+    message: "",
     startDate: null,
     endDate: null
   })
 
-  const [debugging, setDebugging] = useState(false);
-  // FIXME: Filtering Borked
   useEffect(() => {
-    setFilteredItems(filterItems(processedData, itemFilters, debugging, setDebugging))
-  }, [processedData, itemFilters, debugging])
+    setFilteredItems(filterItems(processedData, itemFilters))
+  }, [processedData, itemFilters, setFilteredItems])
 
   useEffect(() => {
     console.log("filtered length:", filteredItems.length)
@@ -130,7 +132,7 @@ export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, set
   return (
     <div className='grid grid-cols-2 bg-red-100 absolute h-66 bottom-0 w-screen'>
       <div className='rounded-2xl w-full h-full'>
-        <ItemFilterer setItemFilters={setItemFilters} setDebugging={setDebugging} />
+        <ItemFilterer setItemFilters={setItemFilters} />
       </div>
 
 
