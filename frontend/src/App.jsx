@@ -1,10 +1,10 @@
 // import { GPTMap } from "./Components/GPTMap";
 import { Bounce, ToastContainer } from "react-toastify";
-import "./App.css"
+import "./App.css";
 import { MyMap } from "./Components/Map/Map";
+import config from "../config"
 
 function App() {
-
   return (
     <>
       <ToastContainer
@@ -20,7 +20,7 @@ function App() {
         theme="dark"
         transition={Bounce}
       />
-      <MyMap />
+      <MyMap MapInitialViewState={config.MapInitialViewState} />
       {/* <GPTMap></GPTMap> */}
       {/* <WebSocketDemo></WebSocketDemo> */}
     </>

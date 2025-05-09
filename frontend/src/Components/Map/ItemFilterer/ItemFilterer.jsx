@@ -1,50 +1,51 @@
-import { Filter } from "lucide-react"
-import { useEffect, useState } from "react"
-import Drawer from 'react-modern-drawer'
-import 'react-modern-drawer/dist/index.css'
-import './index.css'
-
-
+import { Filter } from "lucide-react";
+import { useState } from "react";
+import "react-modern-drawer/dist/index.css";
+import "./index.css";
 
 const ItemFilterMenu = ({ localSetItemFilters }) => {
   const inputField = (name, type) => {
     return (
-      <label className="input"><input className="" placeholder={name} name={name} type={type} /></label>
-    )
-  }
+      <label className="input">
+        <input className="" placeholder={name} name={name} type={type} />
+      </label>
+    );
+  };
   return (
-    <form className="flex flex-col" onSubmit={(e) => {
-      e.preventDefault();
-      let formData = new FormData(e.target);
-      localSetItemFilters(formData)
-    }}>
+    <form
+      className="flex flex-col"
+      onSubmit={(e) => {
+        e.preventDefault();
+        let formData = new FormData(e.target);
+        localSetItemFilters(formData);
+      }}
+    >
       {inputField("priority", "number")}
       {inputField("message", "text")}
       {inputField("startDate", "date")}
       {inputField("endDate", "date")}
 
-      <button type="submit" className="bg-neutral-400 btn">Filter</button>
+      <button type="submit" className="bg-neutral-400 btn">
+        Filter
+      </button>
     </form>
-  )
-}
+  );
+};
 
-
-export const ItemFilterer = ({ itemFilters, setItemFilters }) => {
-  const toggleDrawer = () => {
-    setIsOpen((prevState) => !prevState)
-  }
-
+export const ItemFilterer = ({ setItemFilters }) => {
+  /* TODO: Maybe set the filters to the current value of itemFilters*/
   const localSetItemFilters = (e) => {
-    if (!e) { return }
+    if (!e) {
+      return;
+    }
 
-    let localItemFilters = {}
-    localItemFilters["priority"] = e.get("priority")
-    localItemFilters["message"] = e.get("message")
-    localItemFilters["startDate"] = e.get("startDate")
-    localItemFilters["endDate"] = e.get("endDate")
-    setItemFilters(localItemFilters)
-  }
-
+    let localItemFilters = {};
+    localItemFilters["priority"] = e.get("priority");
+    localItemFilters["message"] = e.get("message");
+    localItemFilters["startDate"] = e.get("startDate");
+    localItemFilters["endDate"] = e.get("endDate");
+    setItemFilters(localItemFilters);
+  };
 
   // <button className="btn btn-accent z-[9999] absolute top-0 right-0" onClick={() => toggleDrawer()}></button>
   // <div className={`absolute top-0 right-0 transition-transform duration-150 transform ${isOpen ? '-translate-x-0' : 'translate-x-full'} z-50`}>tejhkjashgkasjhfglkasfhgaksjfhst</div>
@@ -71,24 +72,4 @@ export const ItemFilterer = ({ itemFilters, setItemFilters }) => {
       </div>
     </div>
   );
-  // return (
-  //   <div className="top-0 right-0 z-50">
-  //     <div className="px-2 py-1 rounded bg-red-800"><Filter /></div>
-  //
-  //     <div className="absolute top-10">
-  //       <Drawer
-  //         open={isOpen}
-  //         onClose={toggleDrawer}
-  //         direction='right'
-  //         className=""
-  //         enableOverlay={false}
-  //         zIndex={10}
-  //       >
-  //          //
-  //       </Drawer>
-  //     </div>
-  //   </div>
-  // )
-}
-
-
+};
