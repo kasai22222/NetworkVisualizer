@@ -29,19 +29,19 @@ func main() {
 	dataMutex.Unlock()
 	debugging.CountCount("After Initial data processing", processedData)
 	go websocket.RunWebsocketServer(processedData, &dataMutex)
-	// go func() {
-	for event := range fileChangeEvents {
-		dataMutex.Lock()
-		currentProcessedData, err := dataparsing.ProcessData(event.Path, processedData)
-		if err != nil {
-			log.Fatal("Error processing data: ", err)
+	go func() {
+		for event := range fileChangeEvents {
+			dataMutex.Lock()
+			currentProcessedData, err := dataparsing.ProcessData(event.Path, processedData)
+			if err != nil {
+				log.Fatal("Error processing data: ", err)
+			}
+			dataMutex.Unlock()
+			debugging.CountCount("Before sending to clients", processedData)
+			websocket.SendMessageToClients(currentProcessedData)
 		}
-		dataMutex.Unlock()
-		debugging.CountCount("Before sending to clients", processedData)
-		websocket.SendMessageToClients(currentProcessedData)
-	}
-	// }()
-	// select {}
+	}()
+	select {}
 }
 
 //	func getData(path string) {
