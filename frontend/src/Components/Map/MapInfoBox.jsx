@@ -37,7 +37,7 @@ const filterItems = (processedData, itemFilters) => {
 }
 
 
-export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, setCurrentDisplayedData }) => {
+export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, setCurrentDisplayedData, currentHoveredObjectIndex, setCurrentHoveredObjectIndex }) => {
   const [itemFilters, setItemFilters] = useState({
     priority: 0,
     message: "",
@@ -93,6 +93,8 @@ export const MapInfoBox = ({ filteredItems, setFilteredItems, processedData, set
 
                 <p onMouseLeave={() => setItemIsHovered(null)} onMouseEnter={() => {
                   setItemIsHovered(i)
+                  // FIXME: Set current hovered item here:::::::::::
+                  setCurrentHoveredObjectIndex(i)
                   setCurrentDisplayedData(item)
                 }
                 }

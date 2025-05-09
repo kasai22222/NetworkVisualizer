@@ -13,6 +13,13 @@ import { MapInfoBox } from "./MapInfoBox";
 
 // console.log(import.meta.env.DEV)
 
+const destinationCoordinates = import.meta.env.VITE_DEST_COORDS.split(",").map((item) => {
+  return Number(item)
+});
+
+console.log(destinationCoordinates)
+
+
 const INITIAL_VIEW_STATE = {
   longitude: 30,
   latitude: 37.7853,
@@ -38,50 +45,29 @@ const AlertInfoBox = ({ data }) => {
 export const MyMap = () => {
   const [messageHistory, setMessageHistory] = useState([]);
   const [processedData, setProcessedData] = useState([]);
+  const [mapArcs, setMapArcs] = useState([])
   const [websocketUrl, setWebsocketUrl] = useState("ws://192.168.0.11:3000/ws");
   // const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:3000/ws")
   const { lastMessage, readyState } = useWebSocket(websocketUrl);
   const [currentShownData, setCurrentShownData] = useState("");
   const [currentDisplayedData, setCurrentDisplayedData] = useState(null);
+  const [currentHoveredObjectIndex, setCurrentHoveredObjectIndex] = useState(-1);
   const [filteredItems, setFilteredItems] = useState(
     processedData.sort((a, b) => {
       return b.Alert.Timestamp - a.Alert.Timestamp;
     })
   );
-  const [mapArcs, setMapArcs] = useState([])
-  //
-  // const connectionStatus = {
-  //   [ReadyState.CONNECTING]: 'Connecting',
-  //   [ReadyState.OPEN]: 'Open',
-  //   [ReadyState.CLOSING]: 'Closing',
-  //   [ReadyState.CLOSED]: 'Closed',
-  //   [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-  // }[readyState];
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: 'Connecting',
+    [ReadyState.OPEN]: 'Open',
+    [ReadyState.CLOSING]: 'Closing',
+    [ReadyState.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+  }[readyState];
 
-  // useEffect(() => {
-  //
-  //   const highAlerts = processedData.filter((item) => item.Alert.Priority == 1).slice(0, 10)
-  //   console.log(highAlerts)
-  // }, [processedData])
-  // const getPriorityOneAlerts = (alerts) => {
-  //   let vals = []
-  //   for (let i = 0; i < 10; i++) {
-  //     if (alerts[i].Priority == 1) {
-  //       vals.push(alerts[i])
-  //     }
-  //   }
-  // }
+  useEffect(() => {
 
-  // const [time, setTime] = useState(Date.now());
-
-  // Update the time to animate the arcs
-  // useEffect(() => , processedData{
-  //   const interval = setInterval(() => {
-  //     setTime(Date.now());
-  //   }, 50); // Update every 50ms for smoother animation
-
-  // return () => clearInterval(interval); // Cleanup on unmount
-  // }, []);
+  })
 
   useEffect(() => {
     if (lastMessage !== null && lastMessage.data.length >= 1) {
@@ -192,10 +178,12 @@ export const MyMap = () => {
     id: "ArcLayer",
     data: mapArcs,
     getSourcePosition: (d) => d.Alert.SrcCoords,
-    getTargetPosition: (d) => d.Alert.DstCoords,
+    getTargetPosition: () => destinationCoordinates,
     getHeight: () => 0.6,
     getSourceColor: (d) => colourFromPriority(d.Alert.Priority),
     getTargetColor: (d) => colourFromPriority(d.Alert.Priority),
+    highlightedObjectIndex: currentHoveredObjectIndex,
+    highlightColor: [0, 255, 0, 255],
     transitions: {
       getSourceColor: {
         duration: 2000,
@@ -214,7 +202,10 @@ export const MyMap = () => {
     pickable: true,
     //FIXME: Broken
     onHover: (info) => {
-      setCurrentDisplayedData(info.object)
+      if (info.index != -1) {
+        setCurrentHoveredObjectIndex(info.index)
+        setCurrentDisplayedData(info.object)
+      }
       //   console.log("INFO: ", info)
       //   console.log("OBJECT: ", info.object)
       //   setCurrentShownData(info.object.Alert)
@@ -223,6 +214,7 @@ export const MyMap = () => {
 
   return (
     <div>
+      {/* <div className="z-50 bg-black p-2">{connectionStatus}</div> */}
       <AlertInfoBox data={currentDisplayedData} />
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
@@ -242,6 +234,8 @@ export const MyMap = () => {
       {/*   return <p>Alert: {alert.Rule.toString()}</p> */}
       {/* })} */}
       <MapInfoBox
+        currentHoveredObjectIndex={currentHoveredObjectIndex}
+        setCurrentHoveredObjectIndex={setCurrentHoveredObjectIndex}
         filteredItems={filteredItems}
         setFilteredItems={setFilteredItems}
         processedData={processedData}
