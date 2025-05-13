@@ -1,13 +1,16 @@
 import { Clipboard } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { useEffect } from "react";
+import { AlertInfoBox } from "./AlertInfoBox";
 import filterItems from "./ItemFilterer/filterItems";
+import generateKey from "./utils/generateKey";
 
 export const MapInfoBox = ({
-  setMapArcs,
+  currentObjectKey,
+  setCurrentObjectKey,
   filteredItems,
   setFilteredItems,
   processedData,
+  currentDisplayedData,
   setCurrentDisplayedData,
   currentObjectIndex,
   setCurrentObjectIndex,
@@ -17,10 +20,7 @@ export const MapInfoBox = ({
     setFilteredItems(filterItems(processedData, itemFilters));
   }, [itemFilters, processedData]);
 
-  useEffect(() => {
-    const filteredArcs = filterItems(processedData, itemFilters);
-    setMapArcs(filteredArcs);
-  }, [itemFilters, processedData]);
+
 
   useEffect(() => {
     console.log("filtered length:", filteredItems.length);
@@ -40,32 +40,42 @@ export const MapInfoBox = ({
     return `${date.getFullYear()}/${month}/${date.getDate()} - ${date.getHours()}:${minutes}`;
   };
 
-  const checkScroll = (event) => {
-    console.log(event.currentTarget.scrollTop);
-  };
   return (
     <>
-      <div className="grid grid-cols-2 bg-red-100 absolute h-66 bottom-0 w-screen">
-        <div className="rounded-2xl bg-black w-full h-full"></div>
-
+      <div className="flex bg-slate-400 rounded-2xl absolute h-66 bottom-5 w-screen">
+        <div className="w-full h-full">
+          <AlertInfoBox data={currentDisplayedData} />
+        </div>
+        {/* TODO: Make the bar look better  */}
+        <div className="divider rounded-2xl divider-horizontal  divider-neutral"></div>
         <div
-          className="bg-slate-400 overflow-auto flex flex-col p-2 w-full h-full"
-          onScroll={(event) => checkScroll(event)}
+          className="bg-slate-400 rounded-2xl overflow-auto flex flex-col w-full h-full"
+          onMouseLeave={() => setCurrentObjectKey(null)}
         >
-          {filteredItems.map((item, i) => {
+          {filteredItems && filteredItems.length > 0 && filteredItems.map((item, i) => {
             // FIXME: Check for element and not index as the index of the element will change when new data is added
-            let isActiveLog = currentObjectIndex == i ? "brightness-110" : "brightness-100";
-            console.log(isActiveLog)
+            let key = generateKey(item)
+            let isActiveLog = currentObjectKey == key
+            let classNames = isActiveLog ? "brightness-110 border-red-400 border-t-2" : "brightness-100";
             return (
               <div
                 key={i}
-                className={`relative flex items-center brightness hover:cursor-pointer ${isActiveLog} bg-slate-400 hover:brightness-105 border-2 border-t-0 first:border-t-2 justify-between w-full`}
+                className={`relative flex items-center brightness hover:cursor-pointer ${classNames} bg-slate-400 hover:brightness-105 border-2 border-t-0 first:border-t-2 rounded-2xl justify-between w-full`}
               >
                 <p
                   onClick={() => {
                     console.log("Clicked on:", i);
                     setCurrentObjectIndex(i);
+                    setCurrentObjectKey(key)
                     setCurrentDisplayedData(item);
+
+                  }}
+                  onMouseEnter={() => {
+                    console.log(isActiveLog)
+                    console.log(key)
+                    if (currentObjectKey == null) {
+                      setCurrentObjectIndex(i)
+                    }
                   }}
                 >
                   {prettifyDate(item.Alert.Timestamp)} {item.Message}

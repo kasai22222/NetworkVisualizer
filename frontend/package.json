@@ -24,6 +24,7 @@
     "react-modern-drawer": "^1.4.0",
     "react-toastify": "^11.0.5",
     "react-use-websocket": "^4.13.0",
+    "recharts": "^2.15.3",
     "tailwindcss": "^4.1.5"
   },
   "devDependencies": {

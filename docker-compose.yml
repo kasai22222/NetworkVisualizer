@@ -1,0 +1,14 @@
+services:
+  backend-app:
+    container_name: backend-app
+    build: ./backend
+    ports:
+      - 3000:3000
+    volumes:
+      - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true

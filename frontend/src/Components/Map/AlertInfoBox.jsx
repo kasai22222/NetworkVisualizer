@@ -1,14 +1,15 @@
 export const AlertInfoBox = ({ data }) => {
-  if (data == null) {
-    return;
-  }
+  const { Alert, Message } = data
+  const { SrcIp, DstIp, Priority } = Alert
   return (
     // FIXME: Make it look good with word wrapping and max width (max-w-[x] doesn't work)
-    <div className="fixed left-0 top-0 bg-gray-600 z-50 p-2 rounded-2xl wrap-anywhere">
-      <p>Priority: {data.Alert.Priority}</p>
-      <p>Message: {data.Message}</p>
-      <p>Source IP: {data.Alert.SrcIp}</p>
-      <p>Destination IP: {data.Alert.DstIp}</p>
-    </div>
+    <div className="flex flex-col p-3 h-full bg-gray-600 rounded-2xl">
+      <div className="flex flex-col p-3 h-full bg-gray-600 rounded-2xl">
+        <p>Priority: {Priority}</p>
+        <p>Message: {Message}</p>
+        <p>Source IP: {SrcIp}</p>
+        <p>Destination IP: {DstIp}</p>
+      </div>
+    </div >
   );
 };
