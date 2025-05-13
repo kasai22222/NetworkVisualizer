@@ -64,6 +64,17 @@ func GetCoordinates(ip net.IP) (types.Coordinates, error) {
 	return []float64{record.Location.Longitude, record.Location.Latitude}, nil
 }
 
+func GetCountryInfo(ip net.IP) (types.CountryInfo, error) {
+	record, err := geoIpInstance.db.Country(ip)
+	if err != nil {
+		return types.CountryInfo{}, err
+	}
+	return types.CountryInfo{
+		IsoCode: record.Country.IsoCode,
+		Name:    record.Country.Names["en"],
+	}, nil
+}
+
 // func geoIpLookup(ip string, queryFunc func(*geoip2.Reader, net.IP) (interface{}, error)) (interface{}, error) {
 
 // 	db, err := geoip2.Open(databaseFilePath)

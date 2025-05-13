@@ -19,10 +19,13 @@ const destinationCoordinates =
 export const MyMap = ({ MapInitialViewState }) => {
   const [processedData, setProcessedData] = useState([]);
   const [mapArcs, setMapArcs] = useState([]);
-  const [websocketUrl] = useState("ws://192.168.0.11:3000/ws");
+  const [websocketUrl] = useState("wss://sv7n-pc.tailf5dd06.ts.net/ws");
   // const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:3000/ws")
   const { lastMessage, readyState } = useWebSocket(websocketUrl);
-  const [currentDisplayedData, setCurrentDisplayedData] = useState(null);
+  const [currentDisplayedData, setCurrentDisplayedData] = useState({
+    Alert: {},
+    Message: ""
+  });
   const [currentObjectIndex, setCurrentObjectIndex] =
     useState(-1);
   const [filteredItems, setFilteredItems] = useState(
@@ -166,7 +169,6 @@ export const MyMap = ({ MapInitialViewState }) => {
     <div>
       <ItemFilterer setItemFilters={setItemFilters} />
       <p>{connectionStatus}</p>
-      <AlertInfoBox data={currentDisplayedData} />
       <DeckGL initialViewState={MapInitialViewState} controller layers={layer}>
         <MapLibreMap mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
       </DeckGL>
@@ -178,6 +180,7 @@ export const MyMap = ({ MapInitialViewState }) => {
         filteredItems={filteredItems}
         setFilteredItems={setFilteredItems}
         processedData={processedData}
+        currentDisplayedData={currentDisplayedData}
         setCurrentDisplayedData={setCurrentDisplayedData}
       />
     </div>

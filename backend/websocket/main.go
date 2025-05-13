@@ -145,5 +145,5 @@ func RunWebsocketServer(processedData map[string]*types.RuleInfo, dataMutex *syn
 		}
 	})
 	fmt.Println("Websocket started on :3000")
-	return http.ListenAndServe(":3000", nil)
+	return http.ListenAndServe("0.0.0.0:3000", nil)
 }

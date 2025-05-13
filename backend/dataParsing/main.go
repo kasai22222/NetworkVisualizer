@@ -40,6 +40,16 @@ func parseJsonData(data types.RawAlert) (types.ParsedAlert, error) {
 		return parsedData, fmt.Errorf("failed to get destination coords %v", err)
 	}
 	parsedData.DstCoords = dstCoords
+	srcCountryInfo, err := geoIpLookup.GetCountryInfo(parsedData.SrcIp)
+	if err != nil {
+		return parsedData, fmt.Errorf("Failed to get source country information: %v", err)
+	}
+	parsedData.SrcCountryInfo = srcCountryInfo
+	dstCountryInfo, err := geoIpLookup.GetCountryInfo(parsedData.DstIp)
+	if err != nil {
+		return parsedData, fmt.Errorf("Failed to get dest. country information: %v", err)
+	}
+	parsedData.DstCountryInfo = dstCountryInfo
 
 	parsedData.Priority = data.Priority
 	parsedData.Timestamp = data.Timestamp

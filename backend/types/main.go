@@ -48,12 +48,14 @@ type RuleStats struct {
 }
 
 type ParsedAlert struct {
-	SrcIp     net.IP
-	SrcCoords Coordinates
-	DstIp     net.IP
-	DstCoords Coordinates
-	Priority  int
-	Timestamp int
+	SrcIp          net.IP
+	SrcCoords      Coordinates
+	DstIp          net.IP
+	DstCoords      Coordinates
+	Priority       int
+	Timestamp      int
+	SrcCountryInfo CountryInfo
+	DstCountryInfo CountryInfo
 	// City   geoip2.City
 }
 
@@ -63,3 +65,8 @@ type ParsedAlert struct {
 // }
 
 type Coordinates []float64
+
+type CountryInfo struct {
+	IsoCode string
+	Name    string
+}
