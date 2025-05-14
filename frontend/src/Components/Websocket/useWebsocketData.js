@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
-const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
+// let backendHostname = import.meta.env.VITE_BACKEND_HOST
+// backendHostname = backendHostname == "" ? "backend" : backendHostname
+
 export const useWebsocketData = () => {
-  if (!websocketUrl || websocketUrl == "") {
-    throw EvalError("Websocket url not defined")
-  }
   const [processedData, setProcessedData] = useState([]);
-  const { lastMessage, readyState } = useWebSocket(websocketUrl);
+  const { lastMessage, readyState } = useWebSocket(`/ws`);
   const [isoCountData, setIsoCountData] = useState([])
   const [totalCount, setTotalCount] = useState(0)
   // const [concatIsoData, setConcatIsoData] = useState({ test: isoCountData, test2: 0 })

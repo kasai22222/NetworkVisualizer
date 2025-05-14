@@ -1,14 +1,30 @@
 services:
-  backend-app:
-    container_name: backend-app
+  backend:
+    container_name: backend
     build: ./backend
     ports:
       - 3000:3000
     volumes:
-      - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+      - /var/log/snort3/alert_json.txt:/watchFiles/alert_json.txt
     networks:
       - proxy-net
+      - app-net
+    restart: unless-stopped
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    ports:
+      - 4000:4000
+    environment:
+      - VITE_BACKEND_HOST
+      - VITE_ALLOWED_HOSTS
+      - VITE_DESTINATION_COORDINATES=0,51.5
+    networks:
+      - app-net
+    restart: unless-stopped
 
 networks:
   proxy-net:
     external: true
+  app-net:
