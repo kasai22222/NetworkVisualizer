@@ -13,7 +13,7 @@ import (
 
 // "backend/websocket"
 
-var filesToWatch = []string{"alert_json.txt"}
+var filesToWatch = []string{"/watchFiles/alert_json.txt"}
 var processedData = map[string]*types.RuleInfo{}
 var dataMutex sync.Mutex
 
