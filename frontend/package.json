@@ -22,6 +22,7 @@
     "react-dom": "^19.0.0-rc.1",
     "react-map-gl": "^8.0.4",
     "react-modern-drawer": "^1.4.0",
+    "react-router": "^7.6.0",
     "react-toastify": "^11.0.5",
     "react-use-websocket": "^4.13.0",
     "recharts": "^2.15.3",

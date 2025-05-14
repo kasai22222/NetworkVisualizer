@@ -14,7 +14,7 @@ import getColourByAlertPriority from "./utils/getColourByAlertPriority";
 import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
 
 const destinationCoordinates =
-  import.meta.env.VITE_DEST_COORDS?.split(",").map(Number) ?? [];
+  import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
 
 export const MyMap = ({ processedData, MapInitialViewState }) => {
   const [currentDisplayedData, setCurrentDisplayedData] = useState({
@@ -40,7 +40,7 @@ export const MyMap = ({ processedData, MapInitialViewState }) => {
     id: "ArcLayer",
     data: filteredItems,
     getSourcePosition: (d) => d.Alert.SrcCoords,
-    getTargetPosition: () => destinationCoordinates,
+    getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
     getHeight: () => 0.6,
     getSourceColor: (d) => getColourByAlertPriority(d.Alert.Priority),
     getTargetColor: (d) => getColourByAlertPriority(d.Alert.Priority),
