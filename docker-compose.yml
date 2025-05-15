@@ -7,13 +7,19 @@ services:
     volumes:
       - /var/log/snort3/alert_json.txt:/watchFiles/alert_json.txt
     networks:
-      - proxy-net
       - app-net
     restart: unless-stopped
 
   frontend:
     container_name: frontend
     build: ./frontend
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/
+          target: /build
+          ignore:
+            - node_modules/
     ports:
       - 4000:4000
     environment:
@@ -22,6 +28,7 @@ services:
       - VITE_DESTINATION_COORDINATES=0,51.5
     networks:
       - app-net
+      - proxy-net
     restart: unless-stopped
 
 networks:

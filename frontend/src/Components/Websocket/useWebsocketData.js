@@ -4,9 +4,8 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 // backendHostname = backendHostname == "" ? "backend" : backendHostname
 
 export const useWebsocketData = () => {
-  // FIXME: Changed this to use SSR
-  const { lastMessage, readyState } = useWebSocket('wss://sv7n-pc.tailf5dd06.ts.net/ws')
-  // const { lastMessage, readyState } = useWebSocket(`/ws`);
+  // const { lastMessage, readyState } = useWebSocket('wss://sv7n-pc.tailf5dd06.ts.net/ws')
+  const { lastMessage, readyState } = useWebSocket(`/ws`);
   // const [concatIsoData, setConcatIsoData] = useState({ test: isoCountData, test2: 0 })
 
 

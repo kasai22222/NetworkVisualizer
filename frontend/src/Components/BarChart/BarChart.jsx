@@ -9,6 +9,9 @@ const HighestCountryBarChart = ({ data }) => {
     topN: 5
   })
 
+  useEffect(() => {
+    console.log(sortingSettings)
+  }, [sortingSettings])
   const handleSortChange = (e) => {
     setSortingSettings(prev => ({
       ...prev,
@@ -36,7 +39,7 @@ const HighestCountryBarChart = ({ data }) => {
   return (
     <>
       <div className="absolute bg-black p-1 top-0 right-0 z-50">
-        <select 
+        <select
           value={sortingSettings.groupBy}
           onChange={handleSortChange}
           className="p-2 border rounded"
@@ -47,7 +50,7 @@ const HighestCountryBarChart = ({ data }) => {
           <option value="priority">Priority level</option>
         </select>
 
-        <select 
+        <select
           value={sortingSettings.sortDescending ? "descending" : "ascending"}
           onChange={handleSortDirectionChange}
           className="p-2 border rounded"
@@ -56,7 +59,7 @@ const HighestCountryBarChart = ({ data }) => {
           <option value="ascending">Ascending</option>
         </select>
 
-        <select 
+        <select
           value={sortingSettings.topN || "all"}
           onChange={handleTopNChange}
           className="p-2 border rounded"

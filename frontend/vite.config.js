@@ -14,6 +14,7 @@ export default ({ mode }) => {
         '/ws': {
           target: 'ws://backend:3000',
           ws: true,
+          changeOrigin: true,
         },
       },
       allowedHosts: allowedHosts ?? [],
