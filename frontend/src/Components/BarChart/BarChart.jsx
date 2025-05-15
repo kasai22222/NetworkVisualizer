@@ -1,43 +1,91 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import dataSortByX from "./dataSorting"
 
-const HighestCountryBarChart = ({ isoData }) => {
-  const { isoCountData, totalCount } = isoData
-  const topN = 3;
-  const sorted = [...isoCountData].sort((a, b) => b.count - a.count);
-  const topEntries = sorted.slice(0, topN);
-  const otherCount = sorted.slice(topN).reduce((sum, entry) => sum + entry.count, 0);
-  topEntries.push({ isoCode: "Other", count: otherCount });
-  useEffect(() => {
-    console.log(isoCountData)
-  }, [isoCountData])
+const HighestCountryBarChart = ({ data }) => {
+  const [sortingSettings, setSortingSettings] = useState({
+    groupBy: "country",
+    sortDescending: true,
+    topN: 5
+  })
+
+  const handleSortChange = (e) => {
+    setSortingSettings(prev => ({
+      ...prev,
+      groupBy: e.target.value
+    }))
+  }
+
+  const handleSortDirectionChange = (e) => {
+    setSortingSettings(prev => ({
+      ...prev,
+      sortDescending: e.target.value === "descending"
+    }))
+  }
+
+  const handleTopNChange = (e) => {
+    const value = e.target.value === "all" ? null : parseInt(e.target.value)
+    setSortingSettings(prev => ({
+      ...prev,
+      topN: value
+    }))
+  }
+
+  const sortedData = dataSortByX(data, sortingSettings)
+
   return (
-    <ResponsiveContainer className={"bg-white"} width="100%" height={"100%"}>
-      <BarChart
-
-        barGap={2}
-        barSize={500}
-        maxBarSize="2000"
-        data={topEntries}
-      >
-        <CartesianGrid strokeDasharray={"3 3"} />
-        <XAxis dataKey={"isoCode"} />
-        <YAxis scale="log" domain={['auto', 'auto']} />
-        <Legend />
-        <Bar dataKey={"count"} minPointSize={3} ><LabelList dataKey={"count"} position="top"></LabelList></Bar>
-      </BarChart>
-      <PieChart>
-        <Pie
-          data={topEntries}
-          dataKey={"count"}
-          nameKey={"isoCode"}
-          cx="50%"
-          cy="50%"
-          label
+    <>
+      <div className="absolute bg-black p-1 top-0 right-0 z-50">
+        <select 
+          value={sortingSettings.groupBy}
+          onChange={handleSortChange}
+          className="p-2 border rounded"
         >
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
+          <option value="country">Country</option>
+          <option value="ip">IP</option>
+          <option value="rule">Rule</option>
+          <option value="priority">Priority level</option>
+        </select>
+
+        <select 
+          value={sortingSettings.sortDescending ? "descending" : "ascending"}
+          onChange={handleSortDirectionChange}
+          className="p-2 border rounded"
+        >
+          <option value="descending">Descending</option>
+          <option value="ascending">Ascending</option>
+        </select>
+
+        <select 
+          value={sortingSettings.topN || "all"}
+          onChange={handleTopNChange}
+          className="p-2 border rounded"
+        >
+          <option value="5">Top 5</option>
+          <option value="10">Top 10</option>
+          <option value="20">Top 20</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+
+      <ResponsiveContainer className={"bg-white"} width="100%" height={"100%"}>
+        <BarChart
+          barGap={2}
+          barSize={5}
+          maxBarSize="2000"
+          data={sortedData}
+        >
+          <CartesianGrid strokeDasharray={"3 3"} />
+          <XAxis dataKey="key" />
+          <YAxis />
+          <YAxis scale="log" domain={['auto', 'auto']} />
+          <Legend />
+          <Bar dataKey="value" minPointSize={3}>
+            <LabelList dataKey="value" position="top" />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </>
   )
 }
 

@@ -9,7 +9,7 @@ export const MapInfoBox = ({
   setCurrentObjectKey,
   filteredItems,
   setFilteredItems,
-  processedData,
+  data,
   currentDisplayedData,
   setCurrentDisplayedData,
   currentObjectIndex,
@@ -17,8 +17,8 @@ export const MapInfoBox = ({
   itemFilters,
 }) => {
   useEffect(() => {
-    setFilteredItems(filterItems(processedData, itemFilters));
-  }, [itemFilters, processedData]);
+    setFilteredItems(filterItems(data, itemFilters));
+  }, [itemFilters, data]);
 
 
 

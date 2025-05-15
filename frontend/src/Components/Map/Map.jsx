@@ -16,7 +16,7 @@ import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
 const destinationCoordinates =
   import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
 
-export const MyMap = ({ processedData, MapInitialViewState }) => {
+export const MyMap = ({ data, MapInitialViewState }) => {
   const [currentDisplayedData, setCurrentDisplayedData] = useState({
     Alert: {},
     Message: ""
@@ -25,7 +25,7 @@ export const MyMap = ({ processedData, MapInitialViewState }) => {
     useState(-1);
   const [currentObjectKey, setCurrentObjectKey] = useState()
   const [filteredItems, setFilteredItems] = useState(
-    processedData.sort((a, b) => {
+    data.sort((a, b) => {
       return b.Alert.Timestamp - a.Alert.Timestamp;
     })
   );
@@ -88,7 +88,7 @@ export const MyMap = ({ processedData, MapInitialViewState }) => {
         setCurrentObjectIndex={setCurrentObjectIndex}
         filteredItems={filteredItems}
         setFilteredItems={setFilteredItems}
-        processedData={processedData}
+        data={data}
         currentDisplayedData={currentDisplayedData}
         setCurrentDisplayedData={setCurrentDisplayedData}
       />

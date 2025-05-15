@@ -6,22 +6,23 @@ import config from "../config"
 import { useWebsocketData } from "./Components/Websocket/useWebsocketData";
 import HighestCountryBarChart from "./Components/BarChart/BarChart";
 import { Route, Routes, useSearchParams } from "react-router";
-import { useEffect } from "react";
-
+import useProcessData from "./Components/Websocket/useProcessData";
+import { useState } from "react";
 
 
 function App() {
-  const { processedData, connectionStatus, isoData } = useWebsocketData()
+  const { lastMessage, connectionStatus } = useWebsocketData()
+  const processedData = useProcessData(lastMessage)
   let [searchParams] = useSearchParams();
   let displaySearchParameter = searchParams.get("display")
 
   const getComponentToDisplay = (searchParameter) => {
-    let defaultComponent = <MyMap processedData={processedData} MapInitialViewState={config.MapInitialViewState} />
+    let defaultComponent = <MyMap data={processedData} MapInitialViewState={config.MapInitialViewState} />
     switch (searchParameter) {
       case "map":
         return defaultComponent
       case "barchart":
-        return <HighestCountryBarChart isoData={isoData} />
+        return <HighestCountryBarChart data={processedData} />
       default:
         return defaultComponent
     }
@@ -42,9 +43,9 @@ function App() {
         theme="dark"
         transition={Bounce}
       />
-      <p>{connectionStatus}</p>
       {getComponentToDisplay(displaySearchParameter)}
       {/* <MyMap processedData={processedData} MapInitialViewState={config.MapInitialViewState} /> */}
+      <p className="absolute p-2 bg-black bottom-0 left-0 z-50">{connectionStatus}</p>
     </>
   );
 }
