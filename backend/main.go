@@ -5,6 +5,7 @@ import (
 	"backend/debugging"
 	"backend/types"
 	"backend/websocket"
+	"fmt"
 	"log"
 	"sync"
 )
@@ -25,7 +26,11 @@ func main() {
 
 	//TODO: change to do each file on startup
 	dataMutex.Lock()
-	dataparsing.ProcessData("alert_json.txt", processedData)
+	_, err = dataparsing.ProcessData("alert_json.txt", processedData)
+	if err != nil {
+		fmt.Printf("Error processing data: %v", err)
+	}
+
 	dataMutex.Unlock()
 	debugging.CountCount("After Initial data processing", processedData)
 	go websocket.RunWebsocketServer(processedData, &dataMutex)
