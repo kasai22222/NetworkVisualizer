@@ -5,7 +5,7 @@ const zoom = env.VITE_INITIAL_VIEW_ZOOM
 const pitch = env.VITE_INITIAL_VIEW_PITCH
 // TODO: Add to final readme env var table
 export default {
-  MapInitialViewState: {
+  mapInitialViewState: {
     longitude: longitude ?? 0,
     latitude: latitude ?? 0,
     zoom: zoom ?? 0,

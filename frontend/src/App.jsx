@@ -2,27 +2,33 @@
 import { Bounce, ToastContainer } from "react-toastify";
 import "./App.css";
 import { MyMap } from "./Components/Map/Map";
-import config from "../config"
 import { useWebsocketData } from "./Components/Websocket/useWebsocketData";
-import HighestCountryBarChart from "./Components/BarChart/BarChart";
-import { Route, Routes, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import useProcessData from "./Components/Websocket/useProcessData";
-import { useState } from "react";
+import { LocalChart } from "./Components/Charts/Chart";
+import { LocalBarChart } from "./Components/Charts/BarChart";
+import { LocalPieChart } from "./Components/Charts/PieChart";
+import DetailsPage from "./Pages/DetailsPage";
+import { ItemFilterer } from "./Components/Map/ItemFilterer/ItemFilterer";
 
 
 function App() {
-  const { lastMessage, connectionStatus } = useWebsocketData()
-  const processedData = useProcessData(lastMessage)
   let [searchParams] = useSearchParams();
   let displaySearchParameter = searchParams.get("display")
-
+  // const [filteredItems, setFilteredItems] = useState(
+  //   processedData.sort((a, b) => {
+  //     return b.Alert.Timestamp - a.Alert.Timestamp;
+  //   })
+  // );
   const getComponentToDisplay = (searchParameter) => {
-    let defaultComponent = <MyMap data={processedData} MapInitialViewState={config.MapInitialViewState} />
+    let defaultComponent = <DetailsPage />
     switch (searchParameter) {
       case "map":
-        return defaultComponent
+        return <MyMap />
       case "barchart":
-        return <HighestCountryBarChart data={processedData} />
+        return <LocalChart ><LocalBarChart /></LocalChart>
+      case "piechart":
+        return <LocalChart ><LocalPieChart /></LocalChart>
       default:
         return defaultComponent
     }
@@ -45,7 +51,7 @@ function App() {
       />
       {getComponentToDisplay(displaySearchParameter)}
       {/* <MyMap processedData={processedData} MapInitialViewState={config.MapInitialViewState} /> */}
-      <p className="absolute p-2 bg-black bottom-0 left-0 z-50">{connectionStatus}</p>
+      {/* <p className="absolute p-2 bg-black bottom-0 left-0 z-50">{connectionStatus}</p> */}
     </>
   );
 }

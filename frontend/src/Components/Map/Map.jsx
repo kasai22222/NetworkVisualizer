@@ -3,20 +3,24 @@
  * Sort out data not showing up on refresh (The frontend has all the data but for some reason does not load the data between initial connect to backend and after refresh (I think??))
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { ArcLayer } from "@deck.gl/layers";
 import { Map as MapLibreMap } from "react-map-gl/maplibre";
-import useWebSocket, { ReadyState } from "react-use-websocket";
 import { MapInfoBox } from "./MapInfoBox";
-import { AlertInfoBox } from "./AlertInfoBox";
 import getColourByAlertPriority from "./utils/getColourByAlertPriority";
+import { DataContext } from "../../context/DataContext";
+import { FilterContext } from "../../context/FilterContext";
+import config from "../../../config";
 import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
 
 const destinationCoordinates =
   import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
 
-export const MyMap = ({ data, MapInitialViewState }) => {
+const mapInitialViewState = config.mapInitialViewState
+
+export const MyMap = () => {
+  const { data } = useContext(DataContext)
   const [currentDisplayedData, setCurrentDisplayedData] = useState({
     Alert: {},
     Message: ""
@@ -24,21 +28,11 @@ export const MyMap = ({ data, MapInitialViewState }) => {
   const [currentObjectIndex, setCurrentObjectIndex] =
     useState(-1);
   const [currentObjectKey, setCurrentObjectKey] = useState()
-  const [filteredItems, setFilteredItems] = useState(
-    data.sort((a, b) => {
-      return b.Alert.Timestamp - a.Alert.Timestamp;
-    })
-  );
-  const [itemFilters, setItemFilters] = useState({
-    priority: 0,
-    message: "",
-    startDate: null,
-    endDate: null,
-  });
+  const { itemFiltererValues } = useContext(FilterContext)
   //
   const layer = new ArcLayer({
     id: "ArcLayer",
-    data: filteredItems,
+    data: data,
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
     getHeight: () => 0.6,
@@ -76,21 +70,16 @@ export const MyMap = ({ data, MapInitialViewState }) => {
 
   return (
     <div>
-      <ItemFilterer setItemFilters={setItemFilters} />
-      <DeckGL initialViewState={MapInitialViewState} controller layers={layer}>
+      <ItemFilterer />
+      <DeckGL initialViewState={mapInitialViewState} controller layers={layer}>
         <MapLibreMap mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
       </DeckGL>
       <MapInfoBox
         currentObjectKey={currentObjectKey}
         setCurrentObjectKey={setCurrentObjectKey}
-        itemFilters={itemFilters}
-        currentObjectIndex={currentObjectIndex}
-        setCurrentObjectIndex={setCurrentObjectIndex}
-        filteredItems={filteredItems}
-        setFilteredItems={setFilteredItems}
-        data={data}
         currentDisplayedData={currentDisplayedData}
         setCurrentDisplayedData={setCurrentDisplayedData}
+        setCurrentObjectIndex={setCurrentObjectIndex}
       />
     </div>
   );

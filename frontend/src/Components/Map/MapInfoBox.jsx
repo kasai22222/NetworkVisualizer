@@ -1,32 +1,16 @@
-import { Clipboard } from "lucide-react";
-import { useEffect } from "react";
+import { useContext } from "react";
+import { DataContext } from "../../context/DataContext";
 import { AlertInfoBox } from "./AlertInfoBox";
-import filterItems from "./ItemFilterer/filterItems";
 import generateKey from "./utils/generateKey";
 
 export const MapInfoBox = ({
   currentObjectKey,
   setCurrentObjectKey,
-  filteredItems,
-  setFilteredItems,
-  data,
   currentDisplayedData,
   setCurrentDisplayedData,
-  currentObjectIndex,
   setCurrentObjectIndex,
-  itemFilters,
 }) => {
-  useEffect(() => {
-    setFilteredItems(filterItems(data, itemFilters));
-  }, [itemFilters, data]);
-
-
-
-  useEffect(() => {
-    console.log("filtered length:", filteredItems.length);
-    console.log(filteredItems);
-  }, [filteredItems]);
-
+  const { data } = useContext(DataContext)
   const prettifyDate = (unixTime) => {
     let date = new Date(unixTime * 1000);
     let minutes;
@@ -52,7 +36,7 @@ export const MapInfoBox = ({
           className="bg-slate-400 rounded-2xl overflow-auto flex flex-col w-full h-full"
           onMouseLeave={() => setCurrentObjectKey(null)}
         >
-          {filteredItems && filteredItems.length > 0 && filteredItems.map((item, i) => {
+          {data && data.length > 0 && data.map((item, i) => {
             // FIXME: Check for element and not index as the index of the element will change when new data is added
             let key = generateKey(item)
             let isActiveLog = currentObjectKey == key

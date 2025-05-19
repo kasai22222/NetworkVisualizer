@@ -1,30 +1,79 @@
+import whyDidYouRender from "@welldone-software/why-did-you-render";
 import { Filter } from "lucide-react";
-import { useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import "react-modern-drawer/dist/index.css";
-import "./index.css";
+import { FilterContext } from "../../../context/FilterContext";
 
-const ItemFilterMenu = ({ localSetItemFilters }) => {
-  const inputField = (name, type) => {
-    return (
-      <label className="input">
-        <input className="" placeholder={name} name={name} type={type} />
-      </label>
-    );
+const ItemFilterMenu = ({ itemFiltererValues, localSetItemFilters }) => {
+  const [formData, setFormData] = useState({
+    priority: itemFiltererValues.priority || "",
+    message: itemFiltererValues.message || "",
+    startDate: itemFiltererValues.startDate || "",
+    endDate: itemFiltererValues.endDate || "",
+  });
+
+  // Update local state if context changes (optional, for sync)
+  useEffect(() => {
+    setFormData({
+      priority: itemFiltererValues.priority || "",
+      message: itemFiltererValues.message || "",
+      startDate: itemFiltererValues.startDate || "",
+      endDate: itemFiltererValues.endDate || "",
+    });
+  }, [itemFiltererValues]);
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
+
   return (
     <form
       className="flex flex-col"
       onSubmit={(e) => {
         e.preventDefault();
-        let formData = new FormData(e.target);
-        localSetItemFilters(formData);
+        // Use formData directly
+        localSetItemFilters(new Map(Object.entries(formData)));
       }}
     >
-      {inputField("priority", "number")}
-      {inputField("message", "text")}
-      {inputField("startDate", "date")}
-      {inputField("endDate", "date")}
-
+      <label className="input">
+        <input
+          name="priority"
+          type="number"
+          placeholder="priority"
+          value={formData.priority}
+          onChange={handleChange}
+        />
+      </label>
+      <label className="input">
+        <input
+          name="message"
+          type="text"
+          placeholder="message"
+          value={formData.message}
+          onChange={handleChange}
+        />
+      </label>
+      <label className="input">
+        <input
+          name="startDate"
+          type="date"
+          placeholder="startDate"
+          value={formData.startDate}
+          onChange={handleChange}
+        />
+      </label>
+      <label className="input">
+        <input
+          name="endDate"
+          type="date"
+          placeholder="endDate"
+          value={formData.endDate}
+          onChange={handleChange}
+        />
+      </label>
       <button type="submit" className="bg-neutral-400 btn">
         Filter
       </button>
@@ -32,8 +81,9 @@ const ItemFilterMenu = ({ localSetItemFilters }) => {
   );
 };
 
-export const ItemFilterer = ({ setItemFilters }) => {
+export const ItemFilterer = React.memo(({ className = "top-0 right-0 z-50 fixed" }) => {
   /* TODO: Maybe set the filters to the current value of itemFilters*/
+  const { itemFiltererValues, setItemFiltererValues } = useContext(FilterContext)
   const localSetItemFilters = (e) => {
     if (!e) {
       return;
@@ -44,7 +94,7 @@ export const ItemFilterer = ({ setItemFilters }) => {
     localItemFilters["message"] = e.get("message");
     localItemFilters["startDate"] = e.get("startDate");
     localItemFilters["endDate"] = e.get("endDate");
-    setItemFilters(localItemFilters);
+    setItemFiltererValues(localItemFilters);
   };
 
   // <button className="btn btn-accent z-[9999] absolute top-0 right-0" onClick={() => toggleDrawer()}></button>
@@ -52,14 +102,14 @@ export const ItemFilterer = ({ setItemFilters }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="fixed top-0 right-0 z-50">
+    <div className={className}>
       <div
         className={`relative transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
           }`}
       >
         {/* Drawer Panel */}
         <div className="bg-transparent max-w-44">
-          <ItemFilterMenu localSetItemFilters={localSetItemFilters} />
+          <ItemFilterMenu itemFiltererValues={itemFiltererValues} localSetItemFilters={localSetItemFilters} />
         </div>
 
         {/* Toggle Button */}
@@ -72,4 +122,4 @@ export const ItemFilterer = ({ setItemFilters }) => {
       </div>
     </div>
   );
-};
+});

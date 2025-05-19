@@ -16,7 +16,6 @@ const useProcessData = (lastMessage) => {
 
 
     let flattenedData = [];
-    let highestCountIsoCodes = [];
     const arcs = new Map();
     for (const ruleKey in data) {
       const ruleInfo = data[ruleKey];

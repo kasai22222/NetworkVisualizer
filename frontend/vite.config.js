@@ -10,19 +10,19 @@ export default ({ mode }) => {
   return defineConfig({
     server: {
       host: true,
-      proxy: {
-        '/ws': {
-          target: 'ws://backend:3000',
-          ws: true,
-          changeOrigin: true,
-        },
-      },
+      // proxy: {
+      //   '/ws': {
+      //     target: 'wss://backend:3000',
+      //     ws: true,
+      //     changeOrigin: true,
+      //   },
+      // },
       allowedHosts: allowedHosts ?? [],
       port: 4000,
       headers: {
         'content-security-policy': "frame-ancestors *"
       },
     },
-    plugins: [tailwindcss(), react()],
+    plugins: [tailwindcss(), react({ jsxImportSource: mode === "development" ? "@welldone-software/why-did-you-render" : "react" })],
   });
 }

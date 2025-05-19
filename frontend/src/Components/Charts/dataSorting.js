@@ -1,10 +1,10 @@
-const dataSortByX = (data, {
+const dataSortByX = (data = [], {
   groupBy = "country",
   sortDescending = true,
   topN = null,
 }) => {
+  console.log(data)
   const groups = new Map();
-
   // Helper function to get the key based on groupBy parameter
   const getKey = (item) => {
     switch (groupBy) {
