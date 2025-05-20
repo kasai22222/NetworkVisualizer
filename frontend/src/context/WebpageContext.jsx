@@ -9,7 +9,9 @@ const WebpageContext = createContext({
 const WebpageProvider = ({ children }) => {
 
   const [queryParams] = useSearchParams();
-  const [isEmbedded, setIsEmbedded] = useState(queryParams.get("embedded") ?? false)
+  console.log(`PARAMS: ${queryParams}`)
+  let _isEmbedded = queryParams.has("embedded") && queryParams.get("embedded")?.toLowerCase() === "true";
+  const [isEmbedded, setIsEmbedded] = useState(_isEmbedded)
   return (<WebpageContext.Provider value={{ isEmbedded, setIsEmbedded }}>{children}</WebpageContext.Provider>)
 }
 

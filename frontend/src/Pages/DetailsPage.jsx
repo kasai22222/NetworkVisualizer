@@ -1,4 +1,3 @@
-import '../../wdyr'
 import { LocalBarChart } from "../Components/Charts/BarChart"
 import { LocalChart } from "../Components/Charts/Chart"
 import { LocalPieChart } from "../Components/Charts/PieChart"
@@ -8,11 +7,9 @@ import { MyMap } from "../Components/Map/Map"
 const DetailsPage = () => {
   return (
     <div className="grid grid-cols-2 grid-rows-2 w-screen h-screen">
-      <div className="col-span-2 flex">
-        {/* <LocalChart><LocalBarChart /></LocalChart> */}
-        {/* <LocalChart><LocalPieChart /></LocalChart> */}
-        <LocalChart><LocalBarChart /></LocalChart>
-      </div>
+      <LocalChart className={"p-2 border-2"}><LocalBarChart /></LocalChart>
+      <LocalChart className={"p-2 border-2"}><LocalPieChart /></LocalChart>
+      {/* </div> */}
 
       {/* <div className="col-span-2"><MyMap /></div> */}
 

@@ -5,7 +5,7 @@ import { WebpageContext } from "../../context/WebpageContext";
 import { ItemFilterer } from "../Map/ItemFilterer/ItemFilterer";
 import dataSortByX from "./dataSorting";
 
-export const LocalChart = ({ children }) => {
+export const LocalChart = ({ className, children }) => {
   const [sortingSettings, setSortingSettings] = useState({
     groupBy: "country",
     sortDescending: true,
@@ -86,20 +86,25 @@ export const LocalChart = ({ children }) => {
   {/* </ResponsiveContainer> */ }
 
   const { isEmbedded } = useContext(WebpageContext)
-  if (isEmbedded === true) {
-    return React.Children.map(children, (child) => {
-      return React.cloneElement(child, { sortedData })
-    }
+  if (isEmbedded) {
+    return (
+      <div className={className}>
+        {
+          React.Children.map(children, (child) => {
+            return React.cloneElement(child, { sortedData })
+          })
+        }
+      </div>
     )
   }
   else {
     return (
-      <>
+      <div className={className}>
         <SortByMenu />
         {React.Children.map(children, (child) => {
           return React.cloneElement(child, { sortedData })
         })}
-      </>
+      </div>
     )
   }
 };

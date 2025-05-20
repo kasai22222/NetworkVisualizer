@@ -2,12 +2,13 @@ services:
   backend:
     container_name: backend
     build: ./backend
-    ports:
-      - 3000:3000
+    # ports:
+    #   - 3000:3000
+    network_mode: host
     volumes:
-      - /var/log/snort3/alert_json.txt:/watchFiles/alert_json.txt
-    networks:
-      - app-net
+      - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+      # networks:
+      #   - app-net
     restart: unless-stopped
 
   frontend:
@@ -28,7 +29,6 @@ services:
       - VITE_DESTINATION_COORDINATES=0,51.5
     networks:
       - app-net
-      - proxy-net
     restart: unless-stopped
 
 networks:

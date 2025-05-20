@@ -9,9 +9,7 @@ export const useWebsocketData = () => {
   // const { lastMessage, readyState } = useWebSocket(`/ws`);
   // const [concatIsoData, setConcatIsoData] = useState({ test: isoCountData, test2: 0 })
 
-  useEffect(() => {
-    console.log("SOCKET:", lastMessage, readyState)
-  })
+
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: "Connecting",
