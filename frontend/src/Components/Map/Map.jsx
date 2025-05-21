@@ -3,7 +3,7 @@
  * Sort out data not showing up on refresh (The frontend has all the data but for some reason does not load the data between initial connect to backend and after refresh (I think??))
  */
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { ArcLayer } from "@deck.gl/layers";
 import { Map as MapLibreMap } from "react-map-gl/maplibre";
@@ -13,6 +13,7 @@ import { DataContext } from "../../context/DataContext";
 import { FilterContext } from "../../context/FilterContext";
 import config from "../../../config";
 import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
+import AnimatedArcLayer from "./AnimatedArcLayer";
 
 const destinationCoordinates =
   import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
@@ -30,26 +31,40 @@ export const MyMap = () => {
   const [currentObjectKey, setCurrentObjectKey] = useState()
   const { itemFiltererValues } = useContext(FilterContext)
   //
-  const layer = new ArcLayer({
-    id: "ArcLayer",
-    data: data,
+  const arcData = [
+    {
+      Alert: {
+        SrcCoords: [12, 40],
+        DstCoords: [128, 5],
+        Priority: 1,
+      },
+      progress: 0.4
+    }
+  ]
+
+
+  const layer = new AnimatedArcLayer({
+    id: "AnimatedArcLayer",
+    data: arcData,
+    getProgress: d => d.progress,
+    progressRange: [0.0, 1.0],
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
     getHeight: () => 0.6,
-    getSourceColor: (d) => getColourByAlertPriority(d.Alert.Priority),
-    getTargetColor: (d) => getColourByAlertPriority(d.Alert.Priority),
+    getSourceColor: (d) => [255, 0, 0, 255],// getColourByAlertPriority(d.Alert.Priority),
+    getTargetColor: (d) => [255, 240, 0, 255], // getColourByAlertPriority(d.Alert.Priority),
     highlightedObjectIndex: currentObjectIndex,
     highlightColor: [0, 255, 0, 255],
-    transitions: {
-      getSourceColor: {
-        duration: 2000,
-        enter: () => [255, 255, 255, 50],
-      },
-      getTargetColor: {
-        duration: 2000,
-        enter: () => [255, 255, 255, 50],
-      },
-    },
+    // transitions: {
+    //   getSourceColor: {
+    //     duration: 2000,
+    //     enter: () => [255, 255, 255, 50],
+    //   },
+    //   getTargetColor: {
+    //     duration: 2000,
+    //     enter: () => [255, 255, 255, 50],
+    //   },
+    // },
     // getTilt: (d) => d.Count * 0.8,
     // getSourcePosition: [-122.27, -37.80],
     // getTargetPosition: [125.8, 40.2],
@@ -67,11 +82,20 @@ export const MyMap = () => {
       //   setCurrentShownData(info.object.Alert)
     },
   });
-
+  // console.log("Layer data:", testData);
+  console.log("Layer props:", layer.props);
   return (
     <div>
       <ItemFilterer />
-      <DeckGL initialViewState={mapInitialViewState} controller layers={layer}>
+      <DeckGL onAfterRender={() => {
+        const manager = layer.getAttributeManager();
+        if (manager) {
+          console.log("ATTR: ", manager.attributes)
+        }
+        else {
+          console.warn("not ready yet")
+        }
+      }} initialViewState={mapInitialViewState} controller layers={[layer]}>
         <MapLibreMap mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
       </DeckGL>
       <MapInfoBox
