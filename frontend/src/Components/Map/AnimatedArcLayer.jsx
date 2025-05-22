@@ -1,45 +1,49 @@
 import { ArcLayer } from "deck.gl";
 
 const uniformBlock = `\
-uniform progressUniforms {
-  vec2 progressRange;
-} progress;
+uniform timeUniforms {
+  float currentTime;
+  float duration;
+} time;
 `;
 
-export const progressUniforms = {
-  name: 'progress',
+export const timeUniforms = {
+  name: 'time',
   vs: uniformBlock,
   fs: uniformBlock,
   uniformTypes: {
-    progressRange: 'vec2<f32>'
+    currentTime: 'f32',
+    duration: 'f32'
   }
 }
 
 export default class AnimatedArcLayer extends ArcLayer {
   layerName = 'AnimatedArcLayer'
   defaultProps = {
-    progressRange: { type: 'array', compare: true, value: [0, 1] },
-    getProgress: { type: 'accessor', value: 1.0 }
+    duration: { type: 'number', value: 1.5 },
+    getStartTime: { type: 'accessor', value: 0 }
   }
 
   getShaders() {
     const shaders = super.getShaders();
     shaders.inject = {
       'vs:#decl': `\
-in float instanceProgress;
+in float instanceStartTime;
 in float segmentRatio;
 out float vProgress;
 `,
       'vs:#main-end': `\
-float progressClamped = clamp(instanceProgress, progress.progressRange.x, progress.progressRange.y);
-float normalizedProgress = (progressClamped - progress.progressRange.x) / (progress.progressRange.y - progress.progressRange.x);
+float elapsedTime = time.currentTime - instanceStartTime;
+float normalizedTime = mod(elapsedTime, time.duration) / time.duration;
 
-float tailLength = 0.1;
-float edgeStart = normalizedProgress;
-float edgeEnd = normalizedProgress + tailLength;
+// Optimize calculations by pre-computing constants
+const float TAIL_LENGTH = 0.1;
+const float FADE_FACTOR = 0.3;
+float edgeStart = normalizedTime;
+float edgeEnd = normalizedTime + TAIL_LENGTH;
+float fade = TAIL_LENGTH * FADE_FACTOR;
 
-float fade = tailLength * 0.3;
-
+// Simplified fade calculations
 float fadeIn = smoothstep(edgeStart, edgeStart + fade, segmentRatio);
 float fadeOut = 1.0 - smoothstep(edgeEnd - fade, edgeEnd, segmentRatio);
 vProgress = fadeIn * fadeOut;
@@ -48,35 +52,30 @@ vProgress = fadeIn * fadeOut;
 in float vProgress;
 `,
       'fs:DECKGL_FILTER_COLOR': `\
-color.a *= vProgress;  `
-      //       'fs:DECKGL_FILTER_COLOR': `\
-      // color.a *= vProgress;
-      // `
+color.a *= vProgress;`
     }
-    shaders.modules = [...shaders.modules, progressUniforms]
+    shaders.modules = [...shaders.modules, timeUniforms]
     return shaders
   }
+
   initializeState() {
     super.initializeState();
     this.getAttributeManager().addInstanced({
-      instanceProgress: {
+      instanceStartTime: {
         size: 1,
-        accessor: 'getProgress'
+        accessor: 'getStartTime'
       }
     })
   }
+
   draw(params) {
-    // super.draw({
-    //   uniforms: {
-    //     ...uniforms,
-    //     progressRange: this.props.progressRange
-    //   }
-    // })
-    const { progressRange } = this.props;
-    const progressProps = { progressRange }
+    const { duration } = this.props;
+    const timeProps = {
+      currentTime: performance.now() / 1000, // Convert to seconds
+      duration
+    }
     const model = this.state.model;
-    model.shaderInputs.setProps({ progress: progressProps })
+    model.shaderInputs.setProps({ time: timeProps })
     super.draw(params)
   }
 }
-

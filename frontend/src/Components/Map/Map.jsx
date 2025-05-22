@@ -1,20 +1,13 @@
-/*
- * TODO: Things to do in this file
- * Sort out data not showing up on refresh (The frontend has all the data but for some reason does not load the data between initial connect to backend and after refresh (I think??))
- */
-
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
-import { ArcLayer } from "@deck.gl/layers";
 import { Map as MapLibreMap } from "react-map-gl/maplibre";
 import { MapInfoBox } from "./MapInfoBox";
-import getColourByAlertPriority from "./utils/getColourByAlertPriority";
 import { DataContext } from "../../context/DataContext";
 import { FilterContext } from "../../context/FilterContext";
 import config from "../../../config";
 import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
 import AnimatedArcLayer from "./AnimatedArcLayer";
-import useProgressLoop from "./utils/useProgressLoop";
+
 const destinationCoordinates =
   import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
 
@@ -26,28 +19,28 @@ export const MyMap = () => {
     Alert: {},
     Message: ""
   });
-  const [currentObjectIndex, setCurrentObjectIndex] =
-    useState(-1);
+  const [currentObjectIndex, setCurrentObjectIndex] = useState(-1);
   const [currentObjectKey, setCurrentObjectKey] = useState()
   const { itemFiltererValues } = useContext(FilterContext)
-  //
-  const arcData = [
-    {
-      Alert: {
-        SrcCoords: [12, 40],
-        DstCoords: [128, 5],
-        Priority: 1,
-      },
-      progress: 0.2
-    }
-  ]
-  const progressRef = useProgressLoop({ duration: 1.5 })
+  const [frame, setFrame] = useState(0);
+  const deckRef = useRef(null);
+
+  // Force redraw on animation frame
+  useEffect(() => {
+    let animationFrameId;
+    const animate = () => {
+      setFrame(f => f + 1);
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    animationFrameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, []);
 
   const layer = useMemo(() => new AnimatedArcLayer({
     id: "AnimatedArcLayer",
     data: data,
-    getProgress: () => progressRef.current,
-    progressRange: [0.0, 1.0],
+    duration: 1.5,
+    getStartTime: (d) => d.Alert.StartTime || 0,
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
     getHeight: () => 0.6,
@@ -55,19 +48,6 @@ export const MyMap = () => {
     getTargetColor: (d) => [255, 240, 0, 255], // getColourByAlertPriority(d.Alert.Priority),
     highlightedObjectIndex: currentObjectIndex,
     highlightColor: [0, 255, 0, 255],
-    // transitions: {
-    //   getSourceColor: {
-    //     duration: 2000,
-    //     enter: () => [255, 255, 255, 50],
-    //   },
-    //   getTargetColor: {
-    //     duration: 2000,
-    //     enter: () => [255, 255, 255, 50],
-    //   },
-    // },
-    // getTilt: (d) => d.Count * 0.8,
-    // getSourcePosition: [-122.27, -37.80],
-    // getTargetPosition: [125.8, 40.2],
     getWidth: 2,
     pickable: true,
     onHover: (info) => {
@@ -76,12 +56,17 @@ export const MyMap = () => {
         setCurrentDisplayedData(info.object);
       }
     },
-  }), [data, currentObjectIndex]); // Only recreate layer when data or currentObjectIndex changes
-  // console.log("Layer data:", testData);
+  }), [data, currentObjectIndex, frame]); // Add frame to dependencies to force layer update
+
   return (
     <div>
       <ItemFilterer />
-      <DeckGL initialViewState={mapInitialViewState} controller layers={[layer]}>
+      <DeckGL
+        ref={deckRef}
+        initialViewState={mapInitialViewState}
+        controller
+        layers={[layer]}
+      >
         <MapLibreMap mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
       </DeckGL>
       <MapInfoBox
@@ -93,14 +78,4 @@ export const MyMap = () => {
       />
     </div>
   );
-
-  // return (
-  //   <Map initialViewState={{
-  //     longitude: -122.4, latitude: 37.8,
-  //     zoom: 14
-  //   }}
-  //     style={{ height: "100%", width: "100%" }}
-  //     mapStyle="https://api.maptiler.com/maps/dataviz/style.json?key=hrp9I8G7p3Wn0lc5wH9U" />
-  //
-  // );
 };
