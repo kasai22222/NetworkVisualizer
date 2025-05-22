@@ -21,6 +21,7 @@ export default class AnimatedArcLayer extends ArcLayer {
     progressRange: { type: 'array', compare: true, value: [0, 1] },
     getProgress: { type: 'accessor', value: 1.0 }
   }
+
   getShaders() {
     const shaders = super.getShaders();
     shaders.inject = {
@@ -33,9 +34,15 @@ out float vProgress;
 float progressClamped = clamp(instanceProgress, progress.progressRange.x, progress.progressRange.y);
 float normalizedProgress = (progressClamped - progress.progressRange.x) / (progress.progressRange.y - progress.progressRange.x);
 
-float edgeStart = normalizedProgress - 0.05;
-float edgeEnd = normalizedProgress;
-vProgress = step(edgeStart, segmentRatio) * step(segmentRatio, edgeEnd);
+float tailLength = 0.1;
+float edgeStart = normalizedProgress;
+float edgeEnd = normalizedProgress + tailLength;
+
+float fade = tailLength * 0.3;
+
+float fadeIn = smoothstep(edgeStart, edgeStart + fade, segmentRatio);
+float fadeOut = 1.0 - smoothstep(edgeEnd - fade, edgeEnd, segmentRatio);
+vProgress = fadeIn * fadeOut;
 `,
       'fs:#decl': `\
 in float vProgress;

@@ -1,9 +1,7 @@
-
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 const useProgressLoop = ({ duration = 10 }) => {
-  const [progress, setProgress] = useState(0);
+  const progressRef = useRef(0);
 
   useEffect(() => {
     let frame;
@@ -11,8 +9,7 @@ const useProgressLoop = ({ duration = 10 }) => {
 
     const loop = (now) => {
       const elapsed = (now - startTime) / 1000; // in seconds
-      const newProgress = (elapsed % duration) / duration;
-      setProgress(newProgress);
+      progressRef.current = (elapsed % duration) / duration;
       frame = requestAnimationFrame(loop);
     };
 
@@ -20,7 +17,7 @@ const useProgressLoop = ({ duration = 10 }) => {
     return () => cancelAnimationFrame(frame);
   }, [duration]);
 
-  return progress;
+  return progressRef;
 };
 
 export default useProgressLoop;

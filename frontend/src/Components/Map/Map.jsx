@@ -41,14 +41,12 @@ export const MyMap = () => {
       progress: 0.2
     }
   ]
-  const progress = useProgressLoop({ duration: 1.7 })
-  useEffect(() => {
-    console.log(progress)
-  }, [progress])
+  const progressRef = useProgressLoop({ duration: 1.5 })
+
   const layer = useMemo(() => new AnimatedArcLayer({
     id: "AnimatedArcLayer",
-    data: arcData,
-    getProgress: d => progress,
+    data: data,
+    getProgress: () => progressRef.current,
     progressRange: [0.0, 1.0],
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
@@ -71,19 +69,14 @@ export const MyMap = () => {
     // getSourcePosition: [-122.27, -37.80],
     // getTargetPosition: [125.8, 40.2],
     getWidth: 2,
-    // greatCircle: true,
     pickable: true,
-    //FIXME: Broken
     onHover: (info) => {
       if (info.index != -1) {
         setCurrentObjectIndex(info.index);
         setCurrentDisplayedData(info.object);
       }
-      //   console.log("INFO: ", info)
-      //   console.log("OBJECT: ", info.object)
-      //   setCurrentShownData(info.object.Alert)
     },
-  }), [progress]);
+  }), [data, currentObjectIndex]); // Only recreate layer when data or currentObjectIndex changes
   // console.log("Layer data:", testData);
   return (
     <div>
