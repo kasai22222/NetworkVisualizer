@@ -3,7 +3,7 @@
  * Sort out data not showing up on refresh (The frontend has all the data but for some reason does not load the data between initial connect to backend and after refresh (I think??))
  */
 
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { ArcLayer } from "@deck.gl/layers";
 import { Map as MapLibreMap } from "react-map-gl/maplibre";
@@ -14,7 +14,7 @@ import { FilterContext } from "../../context/FilterContext";
 import config from "../../../config";
 import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
 import AnimatedArcLayer from "./AnimatedArcLayer";
-
+import useProgressLoop from "./utils/useProgressLoop";
 const destinationCoordinates =
   import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
 
@@ -38,15 +38,17 @@ export const MyMap = () => {
         DstCoords: [128, 5],
         Priority: 1,
       },
-      progress: 0.4
+      progress: 0.2
     }
   ]
-
-
-  const layer = new AnimatedArcLayer({
+  const progress = useProgressLoop({ duration: 1.7 })
+  useEffect(() => {
+    console.log(progress)
+  }, [progress])
+  const layer = useMemo(() => new AnimatedArcLayer({
     id: "AnimatedArcLayer",
     data: arcData,
-    getProgress: d => d.progress,
+    getProgress: d => progress,
     progressRange: [0.0, 1.0],
     getSourcePosition: (d) => d.Alert.SrcCoords,
     getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
@@ -81,21 +83,12 @@ export const MyMap = () => {
       //   console.log("OBJECT: ", info.object)
       //   setCurrentShownData(info.object.Alert)
     },
-  });
+  }), [progress]);
   // console.log("Layer data:", testData);
-  console.log("Layer props:", layer.props);
   return (
     <div>
       <ItemFilterer />
-      <DeckGL onAfterRender={() => {
-        const manager = layer.getAttributeManager();
-        if (manager) {
-          console.log("ATTR: ", manager.attributes)
-        }
-        else {
-          console.warn("not ready yet")
-        }
-      }} initialViewState={mapInitialViewState} controller layers={[layer]}>
+      <DeckGL initialViewState={mapInitialViewState} controller layers={[layer]}>
         <MapLibreMap mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
       </DeckGL>
       <MapInfoBox

@@ -26,10 +26,16 @@ export default class AnimatedArcLayer extends ArcLayer {
     shaders.inject = {
       'vs:#decl': `\
 in float instanceProgress;
+in float segmentRatio;
 out float vProgress;
 `,
       'vs:#main-end': `\
-vProgress = instanceProgress;
+float progressClamped = clamp(instanceProgress, progress.progressRange.x, progress.progressRange.y);
+float normalizedProgress = (progressClamped - progress.progressRange.x) / (progress.progressRange.y - progress.progressRange.x);
+
+float edgeStart = normalizedProgress - 0.05;
+float edgeEnd = normalizedProgress;
+vProgress = step(edgeStart, segmentRatio) * step(segmentRatio, edgeEnd);
 `,
       'fs:#decl': `\
 in float vProgress;
