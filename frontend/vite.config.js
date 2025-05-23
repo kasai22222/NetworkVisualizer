@@ -23,6 +23,6 @@ export default ({ mode }) => {
         'content-security-policy': "frame-ancestors *"
       },
     },
-    plugins: [tailwindcss(), react({ jsxImportSource: mode === "development" ? "@welldone-software/why-did-you-render" : "react" })],
+    plugins: [tailwindcss(), react()],
   });
 }
