@@ -22,9 +22,12 @@ export const MyMap = () => {
   const [currentObjectKey, setCurrentObjectKey] = useState()
 
   const TIME_WINDOW = 2500
-  const [currentTime, setCurrentTime] = useState(1747412890);
-
-
+  const [currentTime, setCurrentTime] = useState(null);
+  useEffect(() => {
+    if (data.length > 0) {
+      setCurrentTime(data[data.length - 1].Alert.Timestamp - 2000)
+    }
+  }, [data])
   useEffect(() => {
     let animationFrameId;
     let lastTimestamp = performance.now();
@@ -53,7 +56,7 @@ export const MyMap = () => {
     getTargetPosition: (d) => destinationCoordinates ?? d.Alert.DstCoords,
     getHeight: () => 0.6,
     getSourceColor: (d) => [255, 0, 0, 255],// getColourByAlertPriority(d.Alert.Priority),
-    getTargetColor: (d) => [130, 0, 102, 255], // getColourByAlertPriority(d.Alert.Priority),
+    getTargetColor: (d) => [255, 0, 0, 255], // getColourByAlertPriority(d.Alert.Priority),
     highlightedObjectIndex: currentObjectIndex,
     highlightColor: [0, 255, 0, 255],
     getWidth: 2,
