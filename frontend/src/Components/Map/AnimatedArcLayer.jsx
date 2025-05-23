@@ -1,81 +1,81 @@
-import { ArcLayer } from "deck.gl";
+// deck.gl
+// SPDX-License-Identifier: MIT
+// Copyright (c) vis.gl contributors
+
+import { ArcLayer } from '@deck.gl/layers';
 
 const uniformBlock = `\
-uniform timeUniforms {
-  float currentTime;
-  float duration;
-} time;
+uniform arcsUniforms {
+  vec2 timeRange;
+} arcs;
 `;
 
-export const timeUniforms = {
-  name: 'time',
+
+export const arcsUniforms = {
+  name: 'arcs',
   vs: uniformBlock,
   fs: uniformBlock,
   uniformTypes: {
-    currentTime: 'f32',
-    duration: 'f32'
+    timeRange: 'vec2<f32>'
   }
-}
+};
+
+const defaultProps = {
+  getSourceTimestamp: { type: 'accessor', value: 0 },
+  getTargetTimestamp: { type: 'accessor', value: 1 },
+  timeRange: { type: 'array', compare: true, value: [0, 1] }
+};
 
 export default class AnimatedArcLayer extends ArcLayer {
-  layerName = 'AnimatedArcLayer'
-  defaultProps = {
-    duration: { type: 'number', value: 1.5 },
-    getStartTime: { type: 'accessor', value: 0 }
-  }
+  layerName = 'AnimatedArcLayer';
+  defaultProps = defaultProps;
 
   getShaders() {
     const shaders = super.getShaders();
     shaders.inject = {
       'vs:#decl': `\
-in float instanceStartTime;
-in float segmentRatio;
-out float vProgress;
+in float instanceSourceTimestamp;
+in float instanceTargetTimestamp;
+out float vTimestamp;
 `,
       'vs:#main-end': `\
-float elapsedTime = time.currentTime - instanceStartTime;
-float normalizedTime = mod(elapsedTime, time.duration) / time.duration;
-
-// Optimize calculations by pre-computing constants
-const float TAIL_LENGTH = 0.1;
-const float FADE_FACTOR = 0.3;
-float edgeStart = normalizedTime;
-float edgeEnd = normalizedTime + TAIL_LENGTH;
-float fade = TAIL_LENGTH * FADE_FACTOR;
-
-// Simplified fade calculations
-float fadeIn = smoothstep(edgeStart, edgeStart + fade, segmentRatio);
-float fadeOut = 1.0 - smoothstep(edgeEnd - fade, edgeEnd, segmentRatio);
-vProgress = fadeIn * fadeOut;
+vTimestamp = mix(instanceSourceTimestamp, instanceTargetTimestamp, segmentRatio);
 `,
       'fs:#decl': `\
-in float vProgress;
+in float vTimestamp;
+`,
+      'fs:#main-start': `\
+if (vTimestamp < arcs.timeRange.x || vTimestamp > arcs.timeRange.y) {
+  discard;
+}
 `,
       'fs:DECKGL_FILTER_COLOR': `\
-color.a *= vProgress;`
-    }
-    shaders.modules = [...shaders.modules, timeUniforms]
-    return shaders
+color.a *= (vTimestamp - arcs.timeRange.x) / (arcs.timeRange.y - arcs.timeRange.x);
+`
+    };
+    shaders.modules = [...shaders.modules, arcsUniforms];
+    return shaders;
   }
 
   initializeState() {
     super.initializeState();
     this.getAttributeManager().addInstanced({
-      instanceStartTime: {
+      instanceSourceTimestamp: {
         size: 1,
-        accessor: 'getStartTime'
+        accessor: 'getSourceTimestamp'
+      },
+      instanceTargetTimestamp: {
+        size: 1,
+        accessor: 'getTargetTimestamp'
       }
-    })
+    });
   }
 
   draw(params) {
-    const { duration } = this.props;
-    const timeProps = {
-      currentTime: performance.now() / 1000, // Convert to seconds
-      duration
-    }
+    const { timeRange } = this.props;
+    const arcsProps = { timeRange };
     const model = this.state.model;
-    model.shaderInputs.setProps({ time: timeProps })
-    super.draw(params)
+    model.shaderInputs.setProps({ arcs: arcsProps });
+    super.draw(params);
   }
 }
