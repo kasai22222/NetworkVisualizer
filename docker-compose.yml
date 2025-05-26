@@ -10,6 +10,16 @@ services:
       # networks:
       #   - app-net
     restart: unless-stopped
+  backend-dev:
+    container_name: backend-dev
+    build: ./backend
+    ports:
+      - 3001:3000
+    volumes:
+      - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+      # networks:
+      #   - app-net
+    restart: unless-stopped
 
   frontend:
     container_name: frontend

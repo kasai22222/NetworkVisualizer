@@ -5,7 +5,7 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 // backendHostname = backendHostname == "" ? "backend" : backendHostname
 
 export const useWebsocketData = () => {
-  const { lastMessage, readyState } = useWebSocket('wss://sv7n-pc.tailf5dd06.ts.net/ws')
+  const { lastMessage, readyState } = useWebSocket('ws://192.168.0.11:3001/ws')
   // const { lastMessage, readyState } = useWebSocket(`/ws`);
   // const [concatIsoData, setConcatIsoData] = useState({ test: isoCountData, test2: 0 })
 
