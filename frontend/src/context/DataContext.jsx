@@ -20,7 +20,12 @@ const DataProvider = ({ children }) => {
   );
 
   useEffect(() => {
-    setFilteredItems(filterItems(processedData, itemFiltererValues));
+    if (processedData.length < 1) {
+      return
+    }
+    // FIXME: Show all data and don't slice
+    console.log(processedData.length)
+    setFilteredItems(filterItems(processedData.slice(0, 400), itemFiltererValues));
   }, [itemFiltererValues, processedData]);
 
 
