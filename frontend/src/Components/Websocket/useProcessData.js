@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 const useProcessData = (lastMessage) => {
   const [processedData, setProcessedData] = useState([])
   useEffect(() => {
-    if (!lastMessage || !lastMessage.data || lastMessage.data.length < 1) return;
-
+    if (!lastMessage || !lastMessage.data || lastMessage.data.length < 0) return;
     let data;
     try {
       data = JSON.parse(lastMessage.data);
@@ -12,7 +11,6 @@ const useProcessData = (lastMessage) => {
       console.error("Invalid JSON from WebSocket:", error);
       return;
     }
-
 
 
     let flattenedData = [];

@@ -7,11 +7,12 @@ import { FilterContext } from "../../context/FilterContext";
 import config from "../../../config";
 import { ItemFilterer } from "./ItemFilterer/ItemFilterer";
 import AnimatedArcLayer from "./AnimatedArcLayer";
+import { Scrubber } from "react-scrubber";
+import 'react-scrubber/lib/scrubber.css'
 const destinationCoordinates =
   import.meta.env.VITE_DEST_COORDS?.split(",").map(Number);
 
 const mapInitialViewState = config.mapInitialViewState
-
 export const MyMap = () => {
   const { data } = useContext(DataContext)
   const [currentDisplayedData, setCurrentDisplayedData] = useState({
@@ -20,33 +21,66 @@ export const MyMap = () => {
   });
   const [currentObjectIndex, setCurrentObjectIndex] = useState(-1);
   const [currentObjectKey, setCurrentObjectKey] = useState()
+  const [isPlaying, setIsPlaying] = useState(true);
 
   const TIME_WINDOW = 2500
   const [currentTime, setCurrentTime] = useState(null);
+  const [timeRange, setTimeRange] = useState({ min: 0, max: 0 });
+
   useEffect(() => {
     if (data.length > 0) {
-      setCurrentTime(data[data.length - 1].Alert.Timestamp - 2000)
+      const timestamps = data.map(d => d.Alert.Timestamp);
+      const newMin = Math.min(...timestamps);
+      const newMax = Math.max(...timestamps);
+
+      setTimeRange(prev => ({
+        min: prev.min === 0 ? newMin : prev.min, // Only set min on first load
+        max: newMax // Always update max with new data
+      }));
+
+      // Only set current time if it hasn't been set yet
+      if (currentTime === null) {
+        setCurrentTime(newMin);
+      }
     }
-  }, [data])
+  }, [data]);
+
   useEffect(() => {
     let animationFrameId;
     let lastTimestamp = performance.now();
 
     const animate = (timestamp) => {
-      const delta = timestamp - lastTimestamp;
+      if (!isPlaying) return;
 
-      // Advance time based on real time elapsed
-      setCurrentTime(prev => prev + delta * 2.5); // Speed factor: tweak "3" for faster/slower
+      const delta = timestamp - lastTimestamp;
+      setCurrentTime(prev => {
+        const newTime = prev + delta * 2.5;
+        if (newTime >= timeRange.max) {
+          return timeRange.min;
+        }
+        return newTime;
+      });
 
       lastTimestamp = timestamp;
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animationFrameId = requestAnimationFrame(animate);
+    if (isPlaying) {
+      animationFrameId = requestAnimationFrame(animate);
+    }
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, []);
-  const timeRange = [currentTime, currentTime + TIME_WINDOW]
+  }, [isPlaying, timeRange]);
+
+  const handleScrubberChange = (value) => {
+    setCurrentTime(value);
+  };
+
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const timeWindow = [currentTime, currentTime + TIME_WINDOW]
   const layer = useMemo(() => new AnimatedArcLayer({
     id: "AnimatedArcLayer",
     data: data,
@@ -60,7 +94,7 @@ export const MyMap = () => {
     highlightedObjectIndex: currentObjectIndex,
     highlightColor: [0, 255, 0, 255],
     getWidth: 2,
-    timeRange,
+    timeRange: timeWindow,
     pickable: true,
     onHover: (info) => {
       if (info.index != -1) {
@@ -68,25 +102,63 @@ export const MyMap = () => {
         setCurrentDisplayedData(info.object);
       }
     },
-  }), [data, timeRange]);// Add frame to dependencies to force layer update
+  }), [data, timeWindow]);// Add frame to dependencies to force layer update
 
   return (
-    <div>
-      <ItemFilterer />
-      <DeckGL
-        initialViewState={mapInitialViewState}
-        controller
-        layers={[layer]}
-      >
-        <MapLibreMap reuseMaps mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" />
-      </DeckGL>
-      <MapInfoBox
-        currentObjectKey={currentObjectKey}
-        setCurrentObjectKey={setCurrentObjectKey}
-        currentDisplayedData={currentDisplayedData}
-        setCurrentDisplayedData={setCurrentDisplayedData}
-        setCurrentObjectIndex={setCurrentObjectIndex}
-      />
+    <div className="relative w-full h-full overflow-hidden">
+      {/* Map Container */}
+      <div className="absolute inset-0 w-full h-full">
+        <DeckGL
+          initialViewState={mapInitialViewState}
+          controller
+          layers={[layer]}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <MapLibreMap
+            reuseMaps
+            mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+            style={{ width: '100%', height: '100%' }}
+            attributionControl={false}
+          />
+        </DeckGL>
+      </div>
+
+      {/* Filter Panel */}
+      <div className="absolute top-4 right-4 z-10">
+        <ItemFilterer />
+      </div>
+
+      {/* Time Controls */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 w-4/5 max-w-4xl">
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handlePlayPause}
+              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              {isPlaying ? '⏸️' : '▶️'}
+            </button>
+            <Scrubber
+              value={currentTime}
+              min={timeRange.min}
+              max={timeRange.max}
+              onScrubChange={handleScrubberChange}
+              className="flex-1"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Info Panel */}
+      <div className="absolute bottom-4 left-4 right-4 z-10">
+        <MapInfoBox
+          currentObjectKey={currentObjectKey}
+          setCurrentObjectKey={setCurrentObjectKey}
+          currentDisplayedData={currentDisplayedData}
+          setCurrentDisplayedData={setCurrentDisplayedData}
+          setCurrentObjectIndex={setCurrentObjectIndex}
+        />
+      </div>
     </div>
   );
 };
