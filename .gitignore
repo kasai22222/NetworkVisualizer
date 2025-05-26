@@ -13,7 +13,7 @@ dist-ssr
 *.local
 
 **.env
-
+maplibre/
 
 # Editor directories and files
 .vscode/*

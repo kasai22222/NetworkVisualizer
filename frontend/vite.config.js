@@ -8,6 +8,7 @@ export default ({ mode }) => {
   const allowedHosts = env.VITE_ALLOWED_HOSTS?.split(",")
 
   return defineConfig({
+    base: "/NetworkVisualizer/",
     server: {
       host: true,
       // proxy: {
