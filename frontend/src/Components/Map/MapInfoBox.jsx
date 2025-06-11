@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { DataContext } from "../../context/DataContext";
 import { AlertInfoBox } from "./AlertInfoBox";
 import generateKey from "./utils/generateKey";
+import { toast } from "react-toastify";
 
 export const MapInfoBox = ({
   currentObjectKey,
@@ -23,14 +24,13 @@ export const MapInfoBox = ({
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
-      <div className="grid grid-cols-2 h-[300px]">
+    <div className="bg-white shadow-lg">
+      <div className="grid grid-cols-2 h-full">
         {/* Current Alert Details */}
         <div className="p-4 border-r border-gray-200">
           <h3 className="text-lg font-semibold mb-4 text-gray-800">Current Alert</h3>
           <AlertInfoBox data={currentDisplayedData} />
         </div>
-
         {/* Alert History */}
         <div
           className="p-4 overflow-y-auto"

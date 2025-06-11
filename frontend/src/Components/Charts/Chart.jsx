@@ -46,7 +46,7 @@ export const LocalChart = ({ className, children, type = "bar" }) => {
     sortDescending: true,
     topN: 5,
   });
-  
+
   const { data } = useContext(DataContext);
   const { isEmbedded } = useContext(WebpageContext);
 
@@ -84,14 +84,14 @@ export const LocalChart = ({ className, children, type = "bar" }) => {
           onTopNChange={handleTopNChange}
         />
       )}
-      <div className="h-full">
-        {React.Children.map(children, (child) => {
-          return React.cloneElement(child, { 
-            sortedData,
-            type
-          });
-        })}
-      </div>
+      <div className="h-full ${className}">
+      {React.Children.map(children, (child) => {
+        return React.cloneElement(child, {
+          sortedData,
+          type
+        });
+      })}
     </div>
+    </div >
   );
 };

@@ -23,10 +23,13 @@ export const MyMap = () => {
   const [currentObjectKey, setCurrentObjectKey] = useState()
   const [isPlaying, setIsPlaying] = useState(true);
 
-  const TIME_WINDOW = 2500
+  const TIME_WINDOW = 2500;
   const [currentTime, setCurrentTime] = useState(null);
   const [timeRange, setTimeRange] = useState({ min: 0, max: 0 });
+  const animationRef = useRef(null);
+  const lastTimestampRef = useRef(performance.now());
 
+  // Initialize time values when data is first loaded
   useEffect(() => {
     if (data.length > 0) {
       const timestamps = data.map(d => d.Alert.Timestamp);
@@ -34,53 +37,58 @@ export const MyMap = () => {
       const newMax = Math.max(...timestamps);
 
       setTimeRange(prev => ({
-        min: prev.min === 0 ? newMin : prev.min, // Only set min on first load
-        max: newMax // Always update max with new data
+        min: prev.min === 0 ? newMin : prev.min,
+        max: newMax
       }));
 
-      // Only set current time if it hasn't been set yet
       if (currentTime === null) {
         setCurrentTime(newMin);
       }
     }
   }, [data]);
 
+  // Animation effect
   useEffect(() => {
-    let animationFrameId;
-    let lastTimestamp = performance.now();
+    if (!currentTime || !timeRange.max) return;
 
     const animate = (timestamp) => {
       if (!isPlaying) return;
 
-      const delta = timestamp - lastTimestamp;
+      const delta = timestamp - lastTimestampRef.current;
       setCurrentTime(prev => {
-        const newTime = prev + delta * 2.5;
+        const newTime = prev + delta * 2;
         if (newTime >= timeRange.max) {
           return timeRange.min;
         }
         return newTime;
       });
 
-      lastTimestamp = timestamp;
-      animationFrameId = requestAnimationFrame(animate);
+      lastTimestampRef.current = timestamp;
+      animationRef.current = requestAnimationFrame(animate);
     };
 
     if (isPlaying) {
-      animationFrameId = requestAnimationFrame(animate);
+      lastTimestampRef.current = performance.now();
+      animationRef.current = requestAnimationFrame(animate);
     }
 
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [isPlaying, timeRange]);
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPlaying, timeRange.max, timeRange.min]);
 
   const handleScrubberChange = (value) => {
     setCurrentTime(value);
+    setIsPlaying(false);
   };
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const timeWindow = [currentTime, currentTime + TIME_WINDOW]
+  const timeWindow = [currentTime, currentTime + TIME_WINDOW];
   const layer = useMemo(() => new AnimatedArcLayer({
     id: "AnimatedArcLayer",
     data: data,
@@ -105,9 +113,9 @@ export const MyMap = () => {
   }), [data, timeWindow]);// Add frame to dependencies to force layer update
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="flex flex-col w-full h-full">
       {/* Map Container */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="flex-1 relative">
         <DeckGL
           initialViewState={mapInitialViewState}
           controller
@@ -121,36 +129,36 @@ export const MyMap = () => {
             attributionControl={false}
           />
         </DeckGL>
-      </div>
 
-      {/* Filter Panel */}
-      <div className="absolute top-4 right-4 z-10">
-        <ItemFilterer />
-      </div>
+        {/* Filter Panel */}
+        <div className="absolute top-6 right-6 z-10">
+          <ItemFilterer />
+        </div>
 
-      {/* Time Controls */}
-      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 w-4/5 max-w-4xl">
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handlePlayPause}
-              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
-            >
-              {isPlaying ? '⏸️' : '▶️'}
-            </button>
-            <Scrubber
-              value={currentTime}
-              min={timeRange.min}
-              max={timeRange.max}
-              onScrubChange={handleScrubberChange}
-              className="flex-1"
-            />
+        {/* Time Controls */}
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 w-4/5 max-w-6xl">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handlePlayPause}
+                className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+              >
+                {isPlaying ? '⏸️' : '▶️'}
+              </button>
+              <Scrubber
+                value={currentTime}
+                min={timeRange.min}
+                max={timeRange.max}
+                onScrubChange={handleScrubberChange}
+                className="flex-1"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Info Panel */}
-      <div className="absolute bottom-4 left-4 right-4 z-10">
+      <div className="h-[300px]">
         <MapInfoBox
           currentObjectKey={currentObjectKey}
           setCurrentObjectKey={setCurrentObjectKey}

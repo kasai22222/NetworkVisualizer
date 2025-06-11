@@ -1,17 +1,16 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.jsx";
-import { BrowserRouter } from "react-router";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+import { BrowserRouter } from 'react-router'
 import { DataProvider } from "./context/DataContext";
 import { FilterProvider } from "./context/FilterContext";
 import { WebpageProvider } from "./context/WebpageContext";
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <BrowserRouter>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter basename="/NetworkVisualizer">
       <WebpageProvider><FilterProvider><DataProvider><App /></DataProvider></FilterProvider></WebpageProvider>
     </BrowserRouter>
-
-  </StrictMode>
-);
+  </React.StrictMode>,
+)
