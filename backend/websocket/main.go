@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+
+	"backend/mqttclient"
 )
 
 var (
@@ -102,13 +104,16 @@ func handleConnection(w http.ResponseWriter, r *http.Request, processedData map[
 // 	}
 // }
 
-func SendMessageToClients(message map[string]*types.RuleInfo) {
-	clientsMutex.Lock()
-	defer clientsMutex.Unlock()
-	for conn := range clients {
-		sendMessage(conn, message)
-	}
+func SendMessageViaMQTT(message map[string]*types.RuleInfo) {
+	mqttclient.PublishAlert("snort/alerts", message)
 }
+// func SendMessageToClients(message map[string]*types.RuleInfo) {
+// 	clientsMutex.Lock()
+// 	defer clientsMutex.Unlock()
+// 	for conn := range clients {
+// 		sendMessage(conn, message)
+// 	}
+// }
 
 func sendMessage(conn *websocket.Conn, message map[string]*types.RuleInfo) {
 	// msg, err := json.Marshal(message)

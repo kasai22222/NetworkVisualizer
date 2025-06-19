@@ -1,17 +1,28 @@
+// {
+//   "compilerOptions": {
+//     "baseUrl": "./src/*",
+//     "paths": {
+//       "@components/*": [
+//         "src/components/*"
+//       ]
+//     },
+//     "jsx": "react"
+//   },
+//   "include": [
+//     "src"
+//   ],
+//   "exclude": [
+//     "maplibre"
+//   ]
+// }
 {
   "compilerOptions": {
-    "baseUrl": "./src/*",
+    "baseUrl": "./src",
     "paths": {
-      "@components/*": [
-        "src/components/*"
-      ]
+      "@components/*": ["components/*"]
     },
-    "jsx": "react"
+    "jsx": "react-jsx"
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "maplibre"
-  ]
+  "include": ["src"],
+  "exclude": ["maplibre"]
 }

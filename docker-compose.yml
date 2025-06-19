@@ -2,14 +2,14 @@ services:
   backend:
     container_name: backend
     build: ./backend
-    # ports:
-    #   - 3000:3000
-    network_mode: host
     volumes:
       - /var/log/snort3/alert_json.txt:/build/alert_json.txt
-      # networks:
-      #   - app-net
+    environment:
+      - MQTT_BROKER=tcp://mosquitto:1883
+    networks:
+      - app-net
     restart: unless-stopped
+
   backend-dev:
     container_name: backend-dev
     build: ./backend
@@ -17,20 +17,15 @@ services:
       - 3001:3000
     volumes:
       - /var/log/snort3/alert_json.txt:/build/alert_json.txt
-      # networks:
-      #   - app-net
+    environment:
+      - MQTT_BROKER=tcp://mosquitto:1883
+    networks:
+      - app-net
     restart: unless-stopped
 
   frontend:
     container_name: frontend
     build: ./frontend
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/
-          target: /build
-          ignore:
-            - node_modules/
     ports:
       - 4000:4000
     environment:
@@ -40,8 +35,22 @@ services:
     networks:
       - app-net
     restart: unless-stopped
+    depends_on:
+      - mosquitto
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - app-net
+    restart: unless-stopped
 
 networks:
-  proxy-net:
-    external: true
   app-net:
+    driver: bridge
+
