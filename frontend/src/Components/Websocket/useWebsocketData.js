@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import mqtt from "mqtt";
 
 export const useWebsocketData = () => {
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState();
   const [status, setStatus] = useState("Connecting");
   const clientRef = useRef(null);
   const retryTimeoutRef = useRef(null);
@@ -10,6 +10,7 @@ export const useWebsocketData = () => {
   useEffect(() => {
     const connect = () => {
       setStatus("Connecting");
+//      const client = mqtt.connect('ws://localhost:9001', {
       const client = mqtt.connect('ws://192.168.0.12:9001', {
         keepalive: 30,
         reconnectPeriod: 0,  // 自動再接続OFFにする
@@ -20,9 +21,9 @@ export const useWebsocketData = () => {
       clientRef.current = client;
 
       client.on('connect', () => {
-        console.log('MQTT 接続成功');
+        // console.log('MQTT 接続成功');
         setStatus("Connected");
-        client.publish('snort/alerts', JSON.stringify({ message: 'Hello from frontend!' }));
+        // client.publish('snort/alerts', JSON.stringify({ message: 'Hello from frontend!' }));
         client.subscribe('snort/alerts', (err) => {
           if (!err) {
             console.log('✅ トピック snort/alerts にサブスクライブ成功');
@@ -33,10 +34,9 @@ export const useWebsocketData = () => {
       });
 
       client.on('message', (topic, payload) => {
-        console.log(`📩 [${topic}] ${payload.toString()}`);
+        console.log(`📩 [${topic}] HEREERERER ${payload.toString()}`);
         try {
-          const data = JSON.parse(payload.toString());
-          setMessage(data);
+          setMessage(payload)
         } catch (e) {
           console.error("Failed to parse message", e);
         }
@@ -48,14 +48,14 @@ export const useWebsocketData = () => {
         client.end();
       });
 
-      client.on("close", () => {
-        console.log("MQTT 接続切断 - 3秒後に再接続を試みます");
-        setStatus("Disconnected");
-        // 3秒後に再接続
-        retryTimeoutRef.current = setTimeout(() => {
-          connect();
-        }, 3000);
-      });
+      // client.on("close", () => {
+      //   console.log("MQTT 接続切断 - 3秒後に再接続を試みます");
+      //   setStatus("Disconnected");
+      //   // 3秒後に再接続
+      //   retryTimeoutRef.current = setTimeout(() => {
+      //     connect();
+      //   }, 3000);
+      // });
     };
 
     connect();

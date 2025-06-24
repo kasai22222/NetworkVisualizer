@@ -22,7 +22,6 @@ export const MapInfoBox = ({
 
     return `${date.getFullYear()}/${month}/${day} ${hours}:${minutes}`;
   };
-
   return (
     <div className="bg-white shadow-lg">
       <div className="grid grid-cols-2 h-full">

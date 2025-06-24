@@ -3,12 +3,13 @@ import { useState, useEffect } from "react";
 const useProcessData = (lastMessage) => {
   const [processedData, setProcessedData] = useState([])
   useEffect(() => {
-    if (!lastMessage || !lastMessage.data || lastMessage.data.length < 0) return;
+    if (!lastMessage || lastMessage.length < 0) return;
     let data;
     try {
-      data = JSON.parse(lastMessage.data);
+      data = JSON.parse(lastMessage);
     } catch (error) {
       console.error("Invalid JSON from WebSocket:", error);
+      console.log(`Raw data: ${lastMessage}`)
       return;
     }
 

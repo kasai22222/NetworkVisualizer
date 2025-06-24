@@ -3,7 +3,6 @@ const dataSortByX = (data = [], {
   sortDescending = true,
   topN = null,
 }) => {
-  console.log(data)
   const groups = new Map();
   // Helper function to get the key based on groupBy parameter
   const getKey = (item) => {

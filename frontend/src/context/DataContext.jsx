@@ -22,6 +22,8 @@ const DataProvider = ({ children }) => {
   );
 
   useEffect(() => {
+  }, [filteredItems]);
+  useEffect(() => {
     if (processedData.length < 1) return;
 
     setFilteredItems(filterItems(processedData.slice(0, 400), itemFiltererValues));

@@ -1,22 +1,23 @@
 services:
-  backend:
-    container_name: backend
-    build: ./backend
-    volumes:
-      - /var/log/snort3/alert_json.txt:/build/alert_json.txt
-    environment:
-      - MQTT_BROKER=tcp://mosquitto:1883
-    networks:
-      - app-net
-    restart: unless-stopped
+  # backend:
+  #   container_name: backend
+  #   build: ./backend
+  #   volumes:
+  #     - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+  #   environment:
+  #     - MQTT_BROKER=tcp://mosquitto:1883
+  #   networks:
+  #     - app-net
+  #   restart: unless-stopped
 
   backend-dev:
     container_name: backend-dev
     build: ./backend
     ports:
-      - 3001:3000
+      - 3000:3000
     volumes:
-      - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+      # - /var/log/snort3/alert_json.txt:/build/alert_json.txt
+    - /var/log/snort3/alert_json.txt:/alert/alert_json.txt
     environment:
       - MQTT_BROKER=tcp://mosquitto:1883
     networks:

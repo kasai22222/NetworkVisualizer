@@ -1,13 +1,14 @@
 package mqttclient
 
 import (
-	"encoding/json"
-	"log"
-	"time"
-	"os"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"backend/types"
+	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 var client mqtt.Client
@@ -20,10 +21,10 @@ func InitMQTT(defaultBroker string) {
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(broker).
-		SetKeepAlive(30 * time.Second). 
-		SetPingTimeout(10 * time.Second). 
-		SetAutoReconnect(true). 
-		SetConnectRetry(true). 
+		SetKeepAlive(30 * time.Second).
+		SetPingTimeout(10 * time.Second).
+		SetAutoReconnect(true).
+		SetConnectRetry(true).
 		SetConnectRetryInterval(10 * time.Second)
 
 	hostname, err := os.Hostname()
@@ -41,7 +42,6 @@ func InitMQTT(defaultBroker string) {
 	log.Printf("✅ MQTT接続完了（接続先: %s, クライアントID: %s）", broker, clientID)
 }
 
-
 func PublishAlert(topic string, message map[string]*types.RuleInfo) {
 	if client == nil || !client.IsConnected() {
 		log.Println("⚠️ MQTTクライアントが未接続です")
@@ -56,7 +56,7 @@ func PublishAlert(topic string, message map[string]*types.RuleInfo) {
 
 	log.Printf("📤 MQTT送信データ: %s", payload)
 
-	token := client.Publish(topic, 0, true, payload) // ← retain を true にするのがポイント
+	token := client.Publish(topic, 0, false, payload)
 	token.Wait()
 
 	if token.Error() != nil {
@@ -65,4 +65,3 @@ func PublishAlert(topic string, message map[string]*types.RuleInfo) {
 		log.Printf("✅ MQTT Publish成功 (topic: %s)", topic)
 	}
 }
-
